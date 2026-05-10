@@ -1,0 +1,88 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+.sidenav-container {
+  height: 100%;
+}
+
+.app-sidenav {
+  width: 286px;
+  border-radius: 0;
+  border-right: 1px solid #d4d4d4;
+  background-color: #f7f7f8;
+}
+
+:host ::ng-deep .app-sidenav .mat-drawer-inner-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.brand-block {
+  padding: 24px;
+  border-bottom: 1px solid #dedede;
+}
+
+.brand-title {
+  margin: 0;
+  color: #060a15;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.brand-subtitle {
+  margin: 8px 0 0;
+  color: #5f6773;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.nav-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 20px 16px 0;
+}
+
+.nav-item {
+  border-radius: 12px;
+  margin-bottom: 8px;
+  color: #262b35;
+}
+
+.nav-item.is-active {
+  background: #e8edf6;
+  color: #0f40f5;
+}
+
+.nav-item mat-icon {
+  color: inherit;
+}
+
+.logout-item {
+  margin-top: auto;
+  margin-bottom: 16px;
+}
+
+.app-content {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+@media (max-width: 991px) {
+  .app-sidenav {
+    width: 240px;
+  }
+
+  .brand-title {
+    font-size: 30px;
+  }
+
+  .brand-subtitle {
+    font-size: 20px;
+  }
+}

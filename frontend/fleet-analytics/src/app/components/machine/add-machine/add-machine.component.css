@@ -1,0 +1,126 @@
+.add-machine-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 8px 16px 24px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: #3f3f46;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #202023;
+  font-size: 1.015rem;
+  transition: all 0.3s ease;
+}
+
+.arrow {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.form-card {
+  border: 1px solid #dfe1e5;
+  border-radius: 16px;
+  background: #fff;
+  padding: 28px 30px 30px;
+  max-height: calc(100vh - 10rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.form-card h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2c2f36;
+}
+
+.field-group mat-form-field {
+  width: 100%;
+}
+
+:host ::ng-deep .field-group .mat-mdc-text-field-wrapper {
+  border-radius: 12px;
+}
+
+:host ::ng-deep .field-group .mdc-notched-outline__leading {
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+}
+
+:host ::ng-deep .field-group .mdc-notched-outline__trailing {
+  border-top-right-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.actions button {
+  height: 3rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.primary-btn {
+  background: #1f63f2;
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #f6f7f9;
+  color: #2d3139;
+  border: 1px solid #dfe1e5;
+}
+
+.add-machine-btn-loading {
+  --mdc-circular-progress-active-indicator-color: #fff;
+}
+
+@media (max-width: 700px) {
+  .field-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

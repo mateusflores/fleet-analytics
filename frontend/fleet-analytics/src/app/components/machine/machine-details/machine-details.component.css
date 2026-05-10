@@ -1,0 +1,54 @@
+.machine-details-page {
+  margin: 0 auto;
+  padding: 8px 16px 24px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: #3f3f46;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #202023;
+  font-size: 1.015rem;
+  transition: all 0.3s ease;
+}
+
+.machine-card {
+  border: 1px solid #dfe1e5;
+  border-radius: 16px;
+  background: #fff;
+  padding: 28px 30px 30px;
+  display: flex;
+  flex-direction: row;
+}
+
+.machine-card h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.machine-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  color: #9aa0aa;
+  margin-top: 0.8rem;
+  width: max-content;
+}
+
+.card-actions {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+}

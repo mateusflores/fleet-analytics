@@ -1,0 +1,49 @@
+<section class="machines-page">
+  <header class="machines-header">
+    <h1>Máquinas</h1>
+
+    <button mat-flat-button type="button" class="add-machine-btn" (click)="goToAddMachine()">
+      <mat-icon>add</mat-icon>
+      Adicionar
+    </button>
+  </header>
+
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-icon matPrefix>search</mat-icon>
+    <input
+      matInput
+      placeholder="Buscar máquinas..."
+      [value]="searchTerm()"
+      (input)="onSearch($event)"
+    />
+  </mat-form-field>
+
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  }
+  @else {
+    @if (filteredMachines.length === 0) {
+      <div class="no-results">
+        <p>Nenhuma máquina encontrada</p>
+      </div>
+    }
+    @else {
+    <section class="machine-grid">
+      @for (machine of filteredMachines; track machine.code) {
+          <app-machine-list-card [machine]="machine"></app-machine-list-card>
+        }
+      </section>
+
+      <mat-paginator
+        class="paginator"
+        [length]="totalMachines"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[9, 18, 27]"
+        (page)="onPageChange($event)"
+      ></mat-paginator>
+    }
+  }
+</section>

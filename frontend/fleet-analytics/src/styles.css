@@ -1,0 +1,29 @@
+/* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.machine-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99rem;
+  background: #e3fbec;
+  color: #0d9f55;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 4px 12px;
+  text-transform: lowercase;
+}
+
+.machine-status.is-offline {
+  background: #fbe4e4;
+  color: #c1121f;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}

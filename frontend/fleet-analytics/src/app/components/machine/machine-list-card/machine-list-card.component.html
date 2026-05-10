@@ -1,0 +1,30 @@
+<mat-card class="machine-card" (click)="onOpenDetails()" style="cursor: pointer;">
+  <div class="machine-card-header">
+    <div class="machine-icon-wrap">
+      <mat-icon>precision_manufacturing</mat-icon>
+    </div>
+
+    <span class="machine-status" [class.is-offline]="machine.status === MachineStatus.Offline">
+      <span class="status-dot"></span>
+      {{ machine.status }}
+    </span>
+  </div>
+
+  <h2 class="machine-name">{{ machine.name }}</h2>
+  <p class="machine-code">{{ machine.code }}</p>
+
+  <dl class="machine-meta">
+    <div class="meta-row">
+      <dt>Tipo</dt>
+      <dd>{{ machine.type | machineTypeLabel }}</dd>
+    </div>
+    <div class="meta-row">
+      <dt>Ano</dt>
+      <dd>{{ machine.year }}</dd>
+    </div>
+    <div class="meta-row">
+      <dt>Kilometragem</dt>
+      <dd>{{ machine.mileage }} km</dd>
+    </div>
+  </dl>
+</mat-card>

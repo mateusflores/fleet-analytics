@@ -1,0 +1,90 @@
+<section class="add-machine-page">
+  <a class="back-link" routerLink="/machines">
+    <mat-icon class="arrow">arrow_back</mat-icon>
+    Voltar
+  </a>
+
+  <article class="form-card">
+    <h1>Adicionar Máquina</h1>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="field-group">
+        <label>Serial Number</label>
+        <mat-form-field appearance="outline">
+          <input
+            matInput
+            type="text"
+            formControlName="code"
+            placeholder="Ex: TRK-2024-001"
+          />
+          @if (fieldError('code'); as msg) {
+            <mat-error>{{ msg }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="field-group">
+        <label>Apelido</label>
+        <mat-form-field appearance="outline">
+          <input
+            matInput
+            type="text"
+            formControlName="name"
+            placeholder="Ex: Hauler Alpha"
+          />
+          @if (fieldError('name'); as msg) {
+            <mat-error>{{ msg }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="field-group">
+        <label>Tipo</label>
+        <mat-form-field appearance="outline">
+          <mat-select formControlName="type">
+            @for (type of machineTypes; track type) {
+              <mat-option [value]="type">{{ type | machineTypeLabel }}</mat-option>
+            }
+          </mat-select>
+          @if (fieldError('type'); as msg) {
+            <mat-error>{{ msg }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Ano</label>
+          <mat-form-field appearance="outline">
+            <input matInput type="number" formControlName="year" />
+            @if (fieldError('year'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>Kilometragem (Km)</label>
+          <mat-form-field appearance="outline">
+            <input matInput type="number" formControlName="mileage" />
+            @if (fieldError('mileage'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button mat-flat-button type="submit" class="primary-btn">
+          @if (isAddingMachine) {
+            <mat-progress-spinner class="add-machine-btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+          }
+          @else {
+            Adicionar
+          }
+        </button>
+        <button mat-button type="button" class="secondary-btn" (click)="onCancel()">Cancelar</button>
+      </div>
+    </form>
+  </article>
+</section>

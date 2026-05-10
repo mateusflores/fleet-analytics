@@ -1,0 +1,25 @@
+<section class="machine-details-page">
+  <a class="back-link" routerLink="/machines">
+    <mat-icon class="arrow">arrow_back</mat-icon>
+    Voltar
+  </a>
+
+  <section class="machine-card">
+    <div class="card-content">
+      <h1>{{ machine?.name }}</h1>
+      <div class="machine-info">
+        {{ machine?.code }} • {{ machine?.type | machineTypeLabel }} • {{ machine?.year }}
+      </div>
+    </div>
+    <div class="card-actions">
+      <span class="machine-status" [class.is-offline]="machine?.status === MachineStatus.Offline">
+        <span class="status-dot"></span>
+        {{ machine?.status }}
+      </span>
+      <button mat-icon-button aria-label="Edit machine">
+        <mat-icon>edit</mat-icon>
+      </button>
+    </div>
+  </section>
+
+</section>
