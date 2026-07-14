@@ -1,7 +1,13 @@
 package com.unesp.fleetanalyticsapi.model.entities;
 
 import jakarta.persistence.*;
-import org.springframework.data.annotation.CreatedDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -12,54 +18,34 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users", schema = "fleet")
-@Inheritance(strategy = InheritanceType.JOINED)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @CreatedDate
-    private ZonedDateTime createdAt;
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
 
-    private String login;
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
 
+    @Column(name = "password", nullable = false)
     private String password;
 
-    public User() {
-    }
+    @Column(name = "is_enabled")
+    private Boolean enabled;
 
-    public UUID getId() {
-        return id;
-    }
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private ZonedDateTime createdAt;
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public ZonedDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(ZonedDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getLogin() {
-        return login;
-    }
-
-    public void setLogin(String login) {
-        this.login = login;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    @UpdateTimestamp
+    @Column(name = "last_update")
+    private ZonedDateTime lastUpdate;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -67,7 +53,12 @@ public class User implements UserDetails {
     }
 
     @Override
+    public @Nullable String getPassword() {
+        return password;
+    }
+
+    @Override
     public String getUsername() {
-        return "";
+        return username;
     }
 }

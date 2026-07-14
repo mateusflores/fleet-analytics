@@ -10,10 +10,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
-@Table(name = "vehicles", schema = "fleet")
+//@Entity
+//@Table(name = "vehicles", schema = "fleet")
 public class Vehicle {
-
+/*
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -46,83 +46,5 @@ public class Vehicle {
     @Column(name = "vehicle_type", nullable = false)
     private VehicleType vehicleType;
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getSerialNumber() {
-        return serialNumber;
-    }
-
-    public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public Integer getYear() {
-        return year;
-    }
-
-    public void setYear(Integer year) {
-        this.year = year;
-    }
-
-    public BigDecimal getMileageKm() {
-        return mileageKm;
-    }
-
-    public void setMileageKm(BigDecimal mileageKm) {
-        this.mileageKm = mileageKm;
-    }
-
-    public VehicleType getVehicleType() {
-        return vehicleType;
-    }
-
-    public void setVehicleType(VehicleType vehicleType) {
-        this.vehicleType = vehicleType;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
-
-    public ZonedDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(ZonedDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public ZonedDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(ZonedDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+ */
 }

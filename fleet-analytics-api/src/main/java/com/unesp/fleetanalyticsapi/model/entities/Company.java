@@ -1,11 +1,19 @@
 package com.unesp.fleetanalyticsapi.model.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "companies", schema = "fleet")
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Company {
 
     @Id
@@ -18,37 +26,11 @@ public class Company {
     @Column(name = "trade_name")
     private String tradeName;
 
+    @Column(name = "cnpj", nullable = false, unique = true, length = 14)
     private String cnpj;
 
-    public UUID getId() {
-        return id;
-    }
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    private Address address;
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getCorporateName() {
-        return corporateName;
-    }
-
-    public void setCorporateName(String corporateName) {
-        this.corporateName = corporateName;
-    }
-
-    public String getTradeName() {
-        return tradeName;
-    }
-
-    public void setTradeName(String tradeName) {
-        this.tradeName = tradeName;
-    }
-
-    public String getCnpj() {
-        return cnpj;
-    }
-
-    public void setCnpj(String cnpj) {
-        this.cnpj = cnpj;
-    }
 }
