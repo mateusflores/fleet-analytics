@@ -1,0 +1,117 @@
+package com.unesp.fleetanalyticsapi.app.services;
+
+import com.unesp.fleetanalyticsapi.app.dtos.CreateTripRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.TripSummary;
+import com.unesp.fleetanalyticsapi.model.entities.Trip;
+import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.repositories.TripRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class TripServiceImpl implements TripService {
+
+    private final TripRepository tripRepository;
+    private final UserRepository userRepository;
+    private final VehicleRepository vehicleRepository;
+
+    @Override
+    @Transactional
+    public TripSummary startTrip(CreateTripRequest request) {
+        User driver = userRepository.findById(request.driverId())
+                .orElseThrow(() -> new EntityNotFoundException("Driver not found: " + request.driverId()));
+
+        Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + request.vehicleId()));
+
+        if (tripRepository.existsByVehicleIdAndEndTimeIsNull(request.vehicleId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Vehicle already has an active trip");
+        }
+
+        Trip trip = Trip.builder()
+                .driver(driver)
+                .vehicle(vehicle)
+                .startTime(ZonedDateTime.now())
+                .build();
+
+        trip = tripRepository.save(trip);
+        return toSummary(trip);
+    }
+
+    @Override
+    @Transactional
+    public TripSummary endTrip(UUID tripId, UUID currentUserId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new EntityNotFoundException("Trip not found: " + tripId));
+
+        if (trip.getEndTime() != null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Trip already ended");
+        }
+
+        boolean isDriver = trip.getDriver().getId().equals(currentUserId);
+        boolean isAdmin = isAdminUser(currentUserId);
+
+        if (!isDriver && !isAdmin) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only the driver who started the trip or an admin can end it");
+        }
+
+        trip.setEndTime(ZonedDateTime.now());
+        trip = tripRepository.save(trip);
+        return toSummary(trip);
+    }
+
+    @Override
+    public TripSummary findById(UUID id) {
+        return tripRepository.findById(id)
+                .map(this::toSummary)
+                .orElseThrow(() -> new EntityNotFoundException("Trip not found: " + id));
+    }
+
+    @Override
+    public List<TripSummary> findAll() {
+        return tripRepository.findAll().stream()
+                .map(this::toSummary)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public TripSummary findActiveByVehicle(UUID vehicleId) {
+        return tripRepository.findByVehicleIdAndEndTimeIsNull(vehicleId)
+                .map(this::toSummary)
+                .orElseThrow(() -> new EntityNotFoundException("No active trip for vehicle: " + vehicleId));
+    }
+
+    private boolean isAdminUser(UUID userId) {
+        return userRepository.findById(userId)
+                .map(user -> "Admin".equals(user.getRole().getName()))
+                .orElse(false);
+    }
+
+    private TripSummary toSummary(Trip trip) {
+        return new TripSummary(
+                trip.getId(),
+                trip.getDriver().getId(),
+                trip.getDriver().getUsername(),
+                trip.getVehicle().getId(),
+                trip.getVehicle().getLicensePlate(),
+                trip.getStartTime(),
+                trip.getEndTime()
+        );
+    }
+}
