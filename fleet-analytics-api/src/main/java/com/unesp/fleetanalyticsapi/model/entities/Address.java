@@ -10,6 +10,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "addresses", schema = "fleet")
@@ -20,8 +21,8 @@ import java.time.ZonedDateTime;
 public class Address {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "address_line")
     private String addressLine;

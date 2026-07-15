@@ -1,0 +1,106 @@
+package com.unesp.fleetanalyticsapi.app.services;
+
+import com.unesp.fleetanalyticsapi.app.dtos.CreateVehicleRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.UpdateVehicleRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.VehicleSummary;
+import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class VehicleServiceImpl implements VehicleService {
+
+    private final VehicleRepository vehicleRepository;
+
+    @Override
+    public List<VehicleSummary> findAll() {
+        return vehicleRepository.findAll().stream()
+                .map(this::toSummary)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public VehicleSummary findById(UUID id) {
+        return vehicleRepository.findById(id)
+                .map(this::toSummary)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + id));
+    }
+
+    @Override
+    public VehicleSummary create(CreateVehicleRequest request) {
+        Vehicle vehicle = Vehicle.builder()
+                .serialNumber(request.serialNumber())
+                .licensePlate(request.licensePlate())
+                .brand(request.brand())
+                .model(request.model())
+                .year(request.year())
+                .color(request.color())
+                .mileageKm(request.mileageKm())
+                .vehicleType(request.vehicleType())
+                .maxLoadKg(request.maxLoadKg())
+                .fuelType(request.fuelType())
+                .nickname(request.nickname())
+                .renavam(request.renavam())
+                .active(true)
+                .build();
+
+        vehicle = vehicleRepository.save(vehicle);
+        return toSummary(vehicle);
+    }
+
+    @Override
+    public VehicleSummary update(UUID id, UpdateVehicleRequest request) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + id));
+
+        if (request.serialNumber() != null) vehicle.setSerialNumber(request.serialNumber());
+        if (request.licensePlate() != null) vehicle.setLicensePlate(request.licensePlate());
+        if (request.brand() != null) vehicle.setBrand(request.brand());
+        if (request.model() != null) vehicle.setModel(request.model());
+        if (request.year() != null) vehicle.setYear(request.year());
+        if (request.color() != null) vehicle.setColor(request.color());
+        if (request.mileageKm() != null) vehicle.setMileageKm(request.mileageKm());
+        if (request.vehicleType() != null) vehicle.setVehicleType(request.vehicleType());
+        if (request.maxLoadKg() != null) vehicle.setMaxLoadKg(request.maxLoadKg());
+        if (request.fuelType() != null) vehicle.setFuelType(request.fuelType());
+        if (request.nickname() != null) vehicle.setNickname(request.nickname());
+        if (request.renavam() != null) vehicle.setRenavam(request.renavam());
+
+        vehicle = vehicleRepository.save(vehicle);
+        return toSummary(vehicle);
+    }
+
+    @Override
+    public void deactivate(UUID id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + id));
+        vehicle.setActive(false);
+        vehicleRepository.save(vehicle);
+    }
+
+    private VehicleSummary toSummary(Vehicle vehicle) {
+        return new VehicleSummary(
+                vehicle.getId(),
+                vehicle.getSerialNumber(),
+                vehicle.getLicensePlate(),
+                vehicle.getBrand(),
+                vehicle.getModel(),
+                vehicle.getYear(),
+                vehicle.getColor(),
+                vehicle.getMileageKm(),
+                vehicle.getVehicleType(),
+                vehicle.getMaxLoadKg(),
+                vehicle.getFuelType(),
+                vehicle.getNickname(),
+                vehicle.getRenavam(),
+                vehicle.getActive()
+        );
+    }
+}

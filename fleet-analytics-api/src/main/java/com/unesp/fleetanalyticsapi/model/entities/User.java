@@ -19,6 +19,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "users", schema = "fleet")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class User implements UserDetails {

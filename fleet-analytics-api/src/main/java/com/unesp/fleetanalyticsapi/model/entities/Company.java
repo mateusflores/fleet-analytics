@@ -20,7 +20,7 @@ public class Company {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "corporte_name")
+    @Column(name = "corporate_name")
     private String corporateName;
 
     @Column(name = "trade_name")

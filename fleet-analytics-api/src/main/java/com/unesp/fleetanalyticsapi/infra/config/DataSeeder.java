@@ -2,12 +2,18 @@ package com.unesp.fleetanalyticsapi.infra.config;
 
 import com.unesp.fleetanalyticsapi.model.entities.Permission;
 import com.unesp.fleetanalyticsapi.model.entities.Role;
+import com.unesp.fleetanalyticsapi.model.entities.User;
 import com.unesp.fleetanalyticsapi.model.repositories.PermissionRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,57 +25,75 @@ public class DataSeeder implements CommandLineRunner {
 
     private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final Environment env;
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run(String... args) {
         if (permissionRepository.count() > 0) {
             return;
         }
 
-        List<Permission> allPermissions = permissionRepository.saveAll(List.of(
-                Permission.builder().name("users:create").description("Create new users").build(),
-                Permission.builder().name("users:read").description("View user details").build(),
-                Permission.builder().name("users:disable").description("Disable user accounts").build(),
-                Permission.builder().name("analytics:view").description("View analytics and reports").build(),
-                Permission.builder().name("travel:start").description("Start a travel").build(),
-                Permission.builder().name("travel:read").description("View travel details").build(),
-                Permission.builder().name("drivers:view").description("View driver list and details").build(),
-                Permission.builder().name("drivers:create").description("Create new drivers").build(),
-                Permission.builder().name("drivers:update").description("Update driver information").build(),
-                Permission.builder().name("vehicles:view").description("View vehicle list and details").build(),
-                Permission.builder().name("vehicles:create").description("Create new vehicles").build(),
-                Permission.builder().name("vehicles:update").description("Update vehicle information").build(),
-                Permission.builder().name("roles:create").description("Create new roles").build(),
-                Permission.builder().name("roles:read").description("View roles and permissions").build(),
-                Permission.builder().name("roles:update").description("Update roles and permissions").build(),
-                Permission.builder().name("roles:delete").description("Delete roles").build()
-        ));
+        Yaml yaml = new Yaml();
+        InputStream input = getClass().getResourceAsStream("/seed/seed.yaml");
+        Map<String, Object> seed = yaml.load(input);
 
-        Map<String, Permission> permMap = allPermissions.stream()
+        List<Map<String, String>> permConfigs = (List<Map<String, String>>) seed.get("permissions");
+        List<Permission> savedPermissions = permissionRepository.saveAll(
+                permConfigs.stream()
+                        .map(p -> Permission.builder()
+                                .name(p.get("name"))
+                                .description(p.get("description"))
+                                .build())
+                        .toList()
+        );
+
+        Map<String, Permission> permMap = savedPermissions.stream()
                 .collect(Collectors.toMap(Permission::getName, p -> p));
 
-        roleRepository.saveAll(List.of(
-                Role.builder()
-                        .name("Admin")
-                        .permissions(Set.copyOf(permMap.values()))
-                        .build(),
-                Role.builder()
-                        .name("Analyst")
-                        .permissions(Set.of(
-                                permMap.get("analytics:view"),
-                                permMap.get("drivers:view"),
-                                permMap.get("vehicles:view"),
-                                permMap.get("travel:read")
-                        ))
-                        .build(),
-                Role.builder()
-                        .name("Driver")
-                        .permissions(Set.of(
-                                permMap.get("travel:start"),
-                                permMap.get("travel:read"),
-                                permMap.get("vehicles:view")
-                        ))
-                        .build()
-        ));
+        List<Map<String, Object>> roleConfigs = (List<Map<String, Object>>) seed.get("roles");
+        for (Map<String, Object> rc : roleConfigs) {
+            String roleName = (String) rc.get("name");
+            Object permValue = rc.get("permissions");
+            Set<Permission> rolePermissions;
+
+            if ("*".equals(permValue)) {
+                rolePermissions = Set.copyOf(savedPermissions);
+            } else {
+                List<String> permNames = (List<String>) permValue;
+                rolePermissions = permNames.stream().map(permMap::get).collect(Collectors.toSet());
+            }
+
+            roleRepository.save(
+                    Role.builder().name(roleName).permissions(rolePermissions).build()
+            );
+        }
+
+        Map<String, Object> adminConfig = (Map<String, Object>) seed.get("admin");
+        String adminUsername = (String) adminConfig.get("username");
+        String adminEmail = (String) adminConfig.get("email");
+        String adminRoleName = (String) adminConfig.get("roleName");
+        String passwordEnvVar = (String) adminConfig.get("passwordEnvVar");
+
+        if (userRepository.findByUsername(adminUsername).isEmpty()) {
+            String adminPassword = env.getProperty(passwordEnvVar);
+            if (adminPassword == null || adminPassword.isBlank()) {
+                throw new IllegalStateException(
+                        "Environment variable '" + passwordEnvVar + "' is required but not set");
+            }
+
+            Role adminRole = roleRepository.findByName(adminRoleName)
+                    .orElseThrow(() -> new IllegalStateException("Admin role not found"));
+
+            userRepository.save(User.builder()
+                    .username(adminUsername)
+                    .email(adminEmail)
+                    .password(passwordEncoder.encode(adminPassword))
+                    .enabled(true)
+                    .role(adminRole)
+                    .build());
+        }
     }
 }
