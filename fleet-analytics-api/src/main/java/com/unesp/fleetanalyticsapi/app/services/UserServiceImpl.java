@@ -9,6 +9,8 @@ import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -43,10 +45,25 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Page<UserSummary> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::toSummary);
+    }
+
+    @Override
     public UserSummary findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .map(this::toSummary)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+    }
+
+    @Override
+    public UserSummary enableUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+        user.setEnabled(true);
+        user = userRepository.save(user);
+        return toSummary(user);
     }
 
     @Override

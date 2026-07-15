@@ -6,13 +6,16 @@ import com.unesp.fleetanalyticsapi.app.services.TripService;
 import com.unesp.fleetanalyticsapi.model.entities.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,8 +43,9 @@ public class TripController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('travel:read')")
-    public ResponseEntity<List<TripSummary>> findAll() {
-        return ResponseEntity.ok(tripService.findAll());
+    public ResponseEntity<Page<TripSummary>> findAll(
+            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(tripService.findAll(pageable));
     }
 
     @GetMapping("/{id}")

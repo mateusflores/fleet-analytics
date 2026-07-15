@@ -7,11 +7,11 @@ import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,10 +20,9 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
 
     @Override
-    public List<VehicleSummary> findAll() {
-        return vehicleRepository.findAll().stream()
-                .map(this::toSummary)
-                .collect(Collectors.toList());
+    public Page<VehicleSummary> findAll(Pageable pageable) {
+        return vehicleRepository.findAll(pageable)
+                .map(this::toSummary);
     }
 
     @Override

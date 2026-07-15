@@ -2,8 +2,9 @@ package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateTripRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.TripSummary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface TripService {
@@ -14,7 +15,7 @@ public interface TripService {
 
     TripSummary findById(UUID id);
 
-    List<TripSummary> findAll();
+    Page<TripSummary> findAll(Pageable pageable);
 
     TripSummary findActiveByVehicle(UUID vehicleId);
 }

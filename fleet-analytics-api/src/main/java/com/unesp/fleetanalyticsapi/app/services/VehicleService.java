@@ -3,13 +3,14 @@ package com.unesp.fleetanalyticsapi.app.services;
 import com.unesp.fleetanalyticsapi.app.dtos.CreateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UpdateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.VehicleSummary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface VehicleService {
 
-    List<VehicleSummary> findAll();
+    Page<VehicleSummary> findAll(Pageable pageable);
 
     VehicleSummary findById(UUID id);
 

@@ -19,6 +19,12 @@ spring:
     validate-on-migrate: true
     out-of-order: false
 
+logging:
+  level:
+    com.unesp.fleetanalyticsapi: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
 app:
   jwt:
     secret: ${JWT_SECRET}
