@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -19,18 +20,21 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('users:create')")
     public ResponseEntity<UserSummary> createUser(@Valid @RequestBody CreateUserRequest request) {
         UserSummary summary = userService.createNewUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(summary);
     }
 
     @GetMapping("/{username}")
+    @PreAuthorize("hasAuthority('users:read')")
     public ResponseEntity<UserSummary> getUserByUsername(@PathVariable String username) {
         UserSummary summary = userService.findUserByUsername(username);
         return ResponseEntity.ok(summary);
     }
 
     @PatchMapping("/{userId}/disable")
+    @PreAuthorize("hasAuthority('users:disable')")
     public ResponseEntity<UserSummary> disableUser(@PathVariable UUID userId) {
         UserSummary summary = userService.disableUser(userId);
         return ResponseEntity.ok(summary);

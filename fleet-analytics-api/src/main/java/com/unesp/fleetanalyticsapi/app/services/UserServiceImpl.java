@@ -2,7 +2,9 @@ package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateUserRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UserSummary;
+import com.unesp.fleetanalyticsapi.model.entities.Role;
 import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +19,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -25,11 +28,15 @@ public class UserServiceImpl implements UserService {
             throw new EntityExistsException("Username already taken: " + request.username());
         }
 
+        Role role = roleRepository.findById(request.roleId())
+                .orElseThrow(() -> new EntityNotFoundException("Role not found: " + request.roleId()));
+
         User user = new User();
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setEnabled(true);
+        user.setRole(role);
 
         user = userRepository.save(user);
         return toSummary(user);
@@ -55,7 +62,8 @@ public class UserServiceImpl implements UserService {
         return new UserSummary(
                 user.getUsername(),
                 user.getEmail(),
-                user.getEnabled()
+                user.getEnabled(),
+                user.getRole().getName()
         );
     }
 }
