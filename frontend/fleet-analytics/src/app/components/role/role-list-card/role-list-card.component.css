@@ -1,0 +1,83 @@
+.role-card {
+  border: 1px solid #e4e4e7;
+  border-radius: 16px;
+  box-shadow: none;
+  padding: 1rem;
+  background-color: #fff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.role-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ecedef;
+}
+
+.role-icon-wrap mat-icon {
+  color: #555;
+}
+
+.role-card-actions {
+  display: flex;
+  align-items: center;
+}
+
+.role-name {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.15;
+  color: #1f2937;
+}
+
+.role-permissions-count {
+  margin: 10px 0 18px;
+  color: #8a9099;
+  font-size: 1rem;
+}
+
+.permissions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.permissions-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.permission-name {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.permission-description {
+  color: #9aa0aa;
+  font-size: 0.85rem;
+}
+
+.empty-permissions {
+  color: #9aa0aa;
+  font-size: 0.95rem;
+}

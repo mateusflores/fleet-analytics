@@ -8,48 +8,99 @@
     <h1>Adicionar Máquina</h1>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div class="field-group">
-        <label>Serial Number</label>
-        <mat-form-field appearance="outline">
-          <input
-            matInput
-            type="text"
-            formControlName="code"
-            placeholder="Ex: TRK-2024-001"
-          />
-          @if (fieldError('code'); as msg) {
-            <mat-error>{{ msg }}</mat-error>
-          }
-        </mat-form-field>
-      </div>
-
-      <div class="field-group">
-        <label>Apelido</label>
-        <mat-form-field appearance="outline">
-          <input
-            matInput
-            type="text"
-            formControlName="name"
-            placeholder="Ex: Hauler Alpha"
-          />
-          @if (fieldError('name'); as msg) {
-            <mat-error>{{ msg }}</mat-error>
-          }
-        </mat-form-field>
-      </div>
-
-      <div class="field-group">
-        <label>Tipo</label>
-        <mat-form-field appearance="outline">
-          <mat-select formControlName="type">
-            @for (type of machineTypes; track type) {
-              <mat-option [value]="type">{{ type | machineTypeLabel }}</mat-option>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Número de série</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="serialNumber"
+              placeholder="Ex: TRK-2024-001"
+            />
+            @if (fieldError('serialNumber'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
             }
-          </mat-select>
-          @if (fieldError('type'); as msg) {
-            <mat-error>{{ msg }}</mat-error>
-          }
-        </mat-form-field>
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>Placa</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="licensePlate"
+              placeholder="Ex: ABC1D23"
+            />
+            @if (fieldError('licensePlate'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Apelido</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="nickname"
+              placeholder="Ex: Hauler Alpha"
+            />
+            @if (fieldError('nickname'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>Tipo</label>
+          <mat-form-field appearance="outline">
+            <mat-select formControlName="vehicleType">
+              @for (type of machineTypes; track type) {
+                <mat-option [value]="type">{{ type | machineTypeLabel }}</mat-option>
+              }
+            </mat-select>
+            @if (fieldError('vehicleType'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Marca</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="brand"
+              placeholder="Ex: Volvo"
+            />
+            @if (fieldError('brand'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>Modelo</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="model"
+              placeholder="Ex: FH 540"
+            />
+            @if (fieldError('model'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
       </div>
 
       <div class="field-row">
@@ -64,10 +115,69 @@
         </div>
 
         <div class="field-group">
-          <label>Kilometragem (Km)</label>
+          <label>Cor</label>
           <mat-form-field appearance="outline">
-            <input matInput type="number" formControlName="mileage" />
-            @if (fieldError('mileage'); as msg) {
+            <input
+              matInput
+              type="text"
+              formControlName="color"
+              placeholder="Ex: Branco"
+            />
+            @if (fieldError('color'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Quilometragem (Km)</label>
+          <mat-form-field appearance="outline">
+            <input matInput type="number" formControlName="mileageKm" />
+            @if (fieldError('mileageKm'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>Carga máxima (Kg)</label>
+          <mat-form-field appearance="outline">
+            <input matInput type="number" formControlName="maxLoadKg" />
+            @if (fieldError('maxLoadKg'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Combustível</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="fuelType"
+              placeholder="Ex: Diesel"
+            />
+            @if (fieldError('fuelType'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>RENAVAM</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="renavam"
+              placeholder="Ex: 12345678901"
+            />
+            @if (fieldError('renavam'); as msg) {
               <mat-error>{{ msg }}</mat-error>
             }
           </mat-form-field>
@@ -75,7 +185,7 @@
       </div>
 
       <div class="actions">
-        <button mat-flat-button type="submit" class="primary-btn">
+        <button mat-flat-button type="submit" class="primary-btn" [disabled]="isAddingMachine">
           @if (isAddingMachine) {
             <mat-progress-spinner class="add-machine-btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
           }

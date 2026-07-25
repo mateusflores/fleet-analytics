@@ -1,0 +1,44 @@
+<section class="roles-page">
+  <header class="roles-header">
+    <h1>Perfis</h1>
+
+    <button mat-flat-button type="button" class="add-role-btn" (click)="goToAddRole()">
+      <mat-icon>add</mat-icon>
+      Adicionar
+    </button>
+  </header>
+
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-icon matPrefix>search</mat-icon>
+    <input
+      matInput
+      placeholder="Buscar perfis..."
+      [value]="searchTerm()"
+      (input)="onSearch($event)"
+    />
+  </mat-form-field>
+
+  @if (isLoading()) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  }
+  @else {
+    @if (filteredRoles().length === 0) {
+      <div class="no-results">
+        <p>Nenhum perfil encontrado</p>
+      </div>
+    }
+    @else {
+      <section class="role-grid">
+        @for (role of filteredRoles(); track role.id) {
+          <app-role-list-card
+            [role]="role"
+            (edit)="onEdit($event)"
+            (remove)="onDelete($event)"
+          ></app-role-list-card>
+        }
+      </section>
+    }
+  }
+</section>

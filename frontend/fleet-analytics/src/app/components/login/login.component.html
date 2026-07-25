@@ -1,0 +1,73 @@
+<section class="login-page">
+  <article class="login-card">
+    <header class="login-brand">
+      <h1>FleetAnalytics</h1>
+      <p>Sistema de Telemetria</p>
+    </header>
+
+    <h2>Entrar</h2>
+    <p class="login-subtitle">Acesse sua conta para continuar</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="field-group">
+        <label for="username">Usuário</label>
+        <mat-form-field appearance="outline">
+          <input
+            id="username"
+            matInput
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            placeholder="Digite seu usuário"
+          />
+          @if (fieldError('username'); as msg) {
+            <mat-error>{{ msg }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="field-group">
+        <label for="password">Senha</label>
+        <mat-form-field appearance="outline">
+          <input
+            id="password"
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="Digite sua senha"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hidePassword = !hidePassword"
+            [attr.aria-label]="hidePassword ? 'Mostrar senha' : 'Ocultar senha'"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+          @if (fieldError('password'); as msg) {
+            <mat-error>{{ msg }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      @if (errorMessage) {
+        <p class="login-error">{{ errorMessage }}</p>
+      }
+
+      <button
+        mat-flat-button
+        type="submit"
+        class="primary-btn"
+        [disabled]="isSubmitting"
+      >
+        @if (isSubmitting) {
+          <mat-progress-spinner class="btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+        } @else {
+          Entrar
+        }
+      </button>
+    </form>
+  </article>
+</section>

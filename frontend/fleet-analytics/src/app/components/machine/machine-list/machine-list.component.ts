@@ -8,8 +8,8 @@ import { Machine } from '../../../models/machine/machine.model';
 import { MachineListCardComponent } from '../machine-list-card/machine-list-card.component';
 import { MachineService } from '../../../services/machine/machine.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { getPtBrPaginatorIntl } from '../../../shared/paginator/paginator-intl-pt-br';
 import { Router } from '@angular/router';
+import { getPtBrPaginatorIntl } from '../../../shared/config/paginator/paginator-intl-pt-br';
 
 @Component({
   selector: 'app-machine-list',
@@ -44,7 +44,7 @@ export class MachineListComponent {
       const term = this.searchTerm();
       const timeout = setTimeout(() => {
         this.pageIndex = 0;
-        this.getMachines(term, this.pageIndex + 1);
+        this.getMachines(term, this.pageIndex);
       }, 300);
 
       onCleanup(() => clearTimeout(timeout));
@@ -55,8 +55,8 @@ export class MachineListComponent {
     this.isLoading = true;
     this._machineService.getMachines(searchTerm, page, this.pageSize).subscribe({
       next: (response) => {
-        this.filteredMachines = response.machines;
-        this.totalMachines = response.total;
+        this.filteredMachines = response.content;
+        this.totalMachines = response.totalElements;
         this.isLoading = false;
       },
       error: (error) => {
@@ -69,7 +69,7 @@ export class MachineListComponent {
   onPageChange(event: PageEvent): void {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
-    this.getMachines(this.searchTerm(), this.pageIndex + 1);
+    this.getMachines(this.searchTerm(), this.pageIndex);
   }
 
   onSearch(event: Event): void {

@@ -1,0 +1,19 @@
+<div class="chart">
+    <h1>{{ title }}</h1>
+    @if (chartSeries().length > 0) {
+        <apx-chart
+            #chart
+            [series]="chartSeries()"
+            [chart]="chartOptions.chart!"
+            [xaxis]="chartOptions.xaxis!"
+            [stroke]="chartOptions.stroke!"
+            [fill]="chartOptions.fill!"
+            [colors]="chartOptions.colors!"
+            [dataLabels]="chartOptions.dataLabels!"
+            [tooltip]="chartOptions.tooltip!"
+        ></apx-chart>
+    } 
+    @else {
+        <p>Carregando telemetria...</p>
+    }
+</div>

@@ -1,0 +1,36 @@
+.card {
+  border: 1px solid #dfe1e5;
+  border-radius: 16px;
+  background: #fff;
+  padding: 28px 30px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.card-content-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-content-meta-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-content-meta-text {
+  font-size: 1rem;
+  color: #9aa0aa;
+}

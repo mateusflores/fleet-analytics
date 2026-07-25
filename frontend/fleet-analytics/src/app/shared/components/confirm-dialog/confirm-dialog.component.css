@@ -1,0 +1,43 @@
+:host {
+  display: block;
+  min-width: 320px;
+  max-width: 440px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+mat-dialog-content p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+mat-dialog-actions {
+  padding: 20px 24px 16px;
+  gap: 12px;
+}
+
+mat-dialog-actions button {
+  height: 3rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 7rem;
+}
+
+.primary-btn {
+  background: #1f63f2;
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #f6f7f9;
+  color: #2d3139;
+  border: 1px solid #dfe1e5;
+}

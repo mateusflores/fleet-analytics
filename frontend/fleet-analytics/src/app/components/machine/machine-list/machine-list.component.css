@@ -38,16 +38,6 @@
   margin-bottom: 22px;
 }
 
-:host ::ng-deep .search-field .mdc-notched-outline__leading {
-  border-top-left-radius: 50px !important;
-  border-bottom-left-radius: 50px !important;
-}
-
-:host ::ng-deep .search-field .mdc-notched-outline__trailing {
-  border-top-right-radius: 14px !important;
-  border-bottom-right-radius: 14px !important;
-}
-
 .search-field .mat-mdc-form-field-subscript-wrapper {
   display: none;
 }

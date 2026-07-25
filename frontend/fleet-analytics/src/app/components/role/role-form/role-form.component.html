@@ -1,0 +1,68 @@
+<section class="role-form-page">
+  <a class="back-link" routerLink="/roles">
+    <mat-icon class="arrow">arrow_back</mat-icon>
+    Voltar
+  </a>
+
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  }
+  @else {
+    <article class="form-card">
+      <h1>{{ pageTitle }}</h1>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="field-group">
+          <label>Nome</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="text"
+              formControlName="name"
+              placeholder="Ex: Analista"
+            />
+            @if (fieldError('name'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="field-group">
+          <label>Permissões</label>
+          <div class="permissions-box">
+            @for (permission of permissions; track permission.id) {
+              <label class="permission-item">
+                <mat-checkbox
+                  [checked]="isPermissionSelected(permission.id)"
+                  (change)="onPermissionToggle(permission.id, $event.checked)"
+                ></mat-checkbox>
+                <span class="permission-content">
+                  <span class="permission-name">{{ permission.name | permissionLabel }}</span>
+                  @if (permission.description) {
+                    <span class="permission-description">{{ permission.name | permissionLabel:'description' }}</span>
+                  }
+                </span>
+              </label>
+            } @empty {
+              <p class="empty-permissions">Nenhuma permissão disponível</p>
+            }
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button type="submit" class="primary-btn" [disabled]="isSaving">
+            @if (isSaving) {
+              <mat-progress-spinner class="btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+            }
+            @else {
+              {{ isEditMode ? 'Salvar' : 'Adicionar' }}
+            }
+          </button>
+          <button mat-button type="button" class="secondary-btn" (click)="onCancel()">Cancelar</button>
+        </div>
+      </form>
+    </article>
+  }
+</section>

@@ -1,0 +1,94 @@
+<section class="user-form-page">
+  <a class="back-link" routerLink="/users">
+    <mat-icon class="arrow">arrow_back</mat-icon>
+    Voltar
+  </a>
+
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  }
+  @else {
+    <article class="form-card">
+      <h1>Adicionar Usuário</h1>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="field-row">
+          <div class="field-group">
+            <label>Nome de usuário</label>
+            <mat-form-field appearance="outline">
+              <input
+                matInput
+                type="text"
+                formControlName="username"
+                placeholder="Ex: joao.silva"
+              />
+              @if (fieldError('username'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="field-group">
+            <label>E-mail</label>
+            <mat-form-field appearance="outline">
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="Ex: joao@empresa.com"
+              />
+              @if (fieldError('email'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>Senha</label>
+            <mat-form-field appearance="outline">
+              <input
+                matInput
+                type="password"
+                formControlName="password"
+                placeholder="Mínimo 6 caracteres"
+              />
+              @if (fieldError('password'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="field-group">
+            <label>Perfil</label>
+            <mat-form-field appearance="outline">
+              <mat-select formControlName="roleId" placeholder="Selecione um perfil">
+                @for (role of roles; track role.id) {
+                  <mat-option [value]="role.id">{{ role.name }}</mat-option>
+                }
+              </mat-select>
+              @if (fieldError('roleId'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button type="submit" class="primary-btn" [disabled]="isSaving">
+            @if (isSaving) {
+              <mat-progress-spinner class="btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+            }
+            @else {
+              Adicionar
+            }
+          </button>
+          <button mat-button type="button" class="secondary-btn" (click)="onCancel()">Cancelar</button>
+        </div>
+      </form>
+    </article>
+  }
+</section>

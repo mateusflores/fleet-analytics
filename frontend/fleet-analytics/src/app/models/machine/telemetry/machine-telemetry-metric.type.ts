@@ -1,0 +1,1 @@
+export type TelemetryMetric = 'rpm' | 'temperature' | 'fuel' | 'pressure';

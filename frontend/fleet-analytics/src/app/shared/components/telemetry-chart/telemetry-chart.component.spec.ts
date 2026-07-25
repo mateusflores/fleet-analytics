@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MachineDetailsComponent } from './machine-details.component';
+import { TelemetryChartComponent } from './telemetry-chart.component';
 
-describe('MachineDetailsComponent', () => {
-  let component: MachineDetailsComponent;
-  let fixture: ComponentFixture<MachineDetailsComponent>;
+describe('TelemetryChartComponent', () => {
+  let component: TelemetryChartComponent;
+  let fixture: ComponentFixture<TelemetryChartComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MachineDetailsComponent]
+      imports: [TelemetryChartComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MachineDetailsComponent);
+    fixture = TestBed.createComponent(TelemetryChartComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

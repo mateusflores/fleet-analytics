@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
+import { filter, map, startWith } from 'rxjs';
+import { AuthService } from './services/auth/auth.service';
 
 interface NavItem {
   label: string;
@@ -28,6 +31,18 @@ interface NavItem {
   styleUrl: './app.component.css'
 })
 export class AppComponent {
+  private readonly _authService = inject(AuthService);
+  private readonly _router = inject(Router);
+
+  readonly isLoginRoute = toSignal(
+    this._router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.startsWith('/login')),
+      startWith(this._router.url.startsWith('/login'))
+    ),
+    { initialValue: this._router.url.startsWith('/login') }
+  );
+
   readonly navItems: NavItem[] = [
     {
       label: 'Dashboard',
@@ -38,6 +53,16 @@ export class AppComponent {
       label: 'Máquinas',
       icon: 'precision_manufacturing',
       route: '/machines'
+    },
+    {
+      label: 'Perfis',
+      icon: 'badge',
+      route: '/roles'
+    },
+    {
+      label: 'Usuários',
+      icon: 'group',
+      route: '/users'
     },
     {
       label: 'Insights',
@@ -53,6 +78,6 @@ export class AppComponent {
 
   onLogout(event: Event): void {
     event.preventDefault();
-    // Logout logic
+    this._authService.logout();
   }
 }

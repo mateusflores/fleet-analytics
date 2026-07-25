@@ -4,22 +4,297 @@
     Voltar
   </a>
 
-  <section class="machine-card">
-    <div class="card-content">
-      <h1>{{ machine?.name }}</h1>
-      <div class="machine-info">
-        {{ machine?.code }} • {{ machine?.type | machineTypeLabel }} • {{ machine?.year }}
-      </div>
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
     </div>
-    <div class="card-actions">
-      <span class="machine-status" [class.is-offline]="machine?.status === MachineStatus.Offline">
-        <span class="status-dot"></span>
-        {{ machine?.status }}
-      </span>
-      <button mat-icon-button aria-label="Edit machine">
-        <mat-icon>edit</mat-icon>
-      </button>
-    </div>
-  </section>
+  }
+  @else {
+    <div class="machine-details-content">
+      @if (machine) {
+        @if (!isEditing) {
+          <section class="machine-card">
+            <div class="card-content">
+              <h1>{{ machine.nickname || machine.serialNumber }}</h1>
+              <div class="machine-info">
+                {{ machine.serialNumber }} • {{ machine.licensePlate }} • {{ machine.vehicleType | machineTypeLabel }} • {{ machine.year }}
+              </div>
+            </div>
+            <div class="card-actions">
+              <span class="machine-status" [class.is-offline]="!machine.active">
+                <span class="status-dot"></span>
+                {{ machine.active ? 'Online' : 'Offline' }}
+              </span>
+              <button mat-icon-button type="button" aria-label="Editar máquina" (click)="startEdit()">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </section>
+        }
+        @else {
+          <mat-card class="machine-card machine-card--editing">
+            <div class="edit-card-header">
+              <h1 class="edit-card-title">Editar máquina</h1>
+              <div class="edit-card-actions">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="isSaving"
+                  class="primary-btn"
+                  form="machine-edit-form"
+                  aria-label="Salvar alterações"
+                >
+                  @if (isSaving) {
+                    <mat-progress-spinner class="add-machine-btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+                  }
+                  @else {
+                    Salvar
+                  }
+                </button>
+                <button mat-icon-button type="button" aria-label="Cancelar edição" (click)="cancelEdit()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
 
+            <form id="machine-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit()">
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="edit-serialNumber">Número de série</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-serialNumber" matInput type="text" formControlName="serialNumber" />
+                    @if (fieldError('serialNumber'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label for="edit-licensePlate">Placa</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-licensePlate" matInput type="text" formControlName="licensePlate" />
+                    @if (fieldError('licensePlate'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="edit-nickname">Apelido</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-nickname" matInput type="text" formControlName="nickname" />
+                    @if (fieldError('nickname'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label for="edit-vehicleType">Tipo</label>
+                  <mat-form-field appearance="outline">
+                    <mat-select id="edit-vehicleType" formControlName="vehicleType">
+                      @for (type of machineTypes; track type) {
+                        <mat-option [value]="type">{{ type | machineTypeLabel }}</mat-option>
+                      }
+                    </mat-select>
+                    @if (fieldError('vehicleType'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="edit-brand">Marca</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-brand" matInput type="text" formControlName="brand" />
+                    @if (fieldError('brand'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label for="edit-model">Modelo</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-model" matInput type="text" formControlName="model" />
+                    @if (fieldError('model'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="edit-year">Ano</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-year" matInput type="number" formControlName="year" />
+                    @if (fieldError('year'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label for="edit-color">Cor</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-color" matInput type="text" formControlName="color" />
+                    @if (fieldError('color'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="edit-mileageKm">Quilometragem (Km)</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-mileageKm" matInput type="number" formControlName="mileageKm" />
+                    @if (fieldError('mileageKm'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label for="edit-maxLoadKg">Carga máxima (Kg)</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-maxLoadKg" matInput type="number" formControlName="maxLoadKg" />
+                    @if (fieldError('maxLoadKg'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="edit-fuelType">Combustível</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-fuelType" matInput type="text" formControlName="fuelType" />
+                    @if (fieldError('fuelType'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label for="edit-renavam">RENAVAM</label>
+                  <mat-form-field appearance="outline">
+                    <input id="edit-renavam" matInput type="text" formControlName="renavam" />
+                    @if (fieldError('renavam'); as msg) {
+                      <mat-error>{{ msg }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+              </div>
+            </form>
+          </mat-card>
+        }
+      }
+
+      <section class="machine-metrics">
+        <app-card
+          [title]="'RPM'"
+          [value]="machineTelemetry ? machineTelemetry.rpm.toString() : '--'"
+          [icon]="'speed'"
+          [iconColor]="'#155dfc'">
+        </app-card>
+        <app-card
+          [title]="'Temperatura'"
+          [value]="machineTelemetry ? machineTelemetry.temperature + '°C' : '--'"
+          [icon]="'device_thermostat'"
+          [iconColor]="'#f54a00'"
+          [lightenFactor]="47">
+        </app-card>
+        <app-card
+          [title]="'Combustível'"
+          [value]="machineTelemetry ? machineTelemetry.fuel + '%' : '--'"
+          [icon]="'opacity'"
+          [iconColor]="'#00a63e'"
+          [lightenFactor]="60">
+        </app-card>
+        <app-card
+          [title]="'Pressão'"
+          [value]="machineTelemetry ? machineTelemetry.pressure + ' PSI' : '--'"
+          [icon]="'show_chart'"
+          [iconColor]="'#9810fa'"
+          [lightenFactor]="43"></app-card>
+      </section>
+    </div>
+    <section class="machine-charts">
+      <div class="charts-periods">
+        <button
+          mat-flat-button
+          color="primary"
+          class="period-button"
+          [class.selected]="selectedPeriod === 0"
+          (click)="changeSelectedPeriod(0)"
+          aria-label="Última Hora">
+          Última Hora
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          class="period-button"
+          [class.selected]="selectedPeriod === 1"
+          (click)="changeSelectedPeriod(1)"
+          aria-label="Últimas 24 horas">
+          Últimas 24 horas
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          class="period-button"
+          [class.selected]="selectedPeriod === 2"
+          (click)="changeSelectedPeriod(2)"
+          aria-label="Últimos 7 dias">
+          Últimos 7 dias
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          class="period-button"
+          [class.selected]="selectedPeriod === 3"
+          (click)="changeSelectedPeriod(3)"
+          aria-label="Últimos 30 dias">
+          Últimos 30 dias
+        </button>
+      </div>
+      <app-telemetry-chart
+        [title]="'RPM'"
+        [machineId]="id"
+        [metric]="'rpm'"
+        [colorAverageChart]="'#155dfc'"
+        [periodStart]="chartPeriods[selectedPeriod]">
+      </app-telemetry-chart>
+      <app-telemetry-chart
+        [title]="'Temperatura'"
+        [machineId]="id"
+        [metric]="'temperature'"
+        [colorAverageChart]="'#f54a00'"
+        [lightenFactor]="47"
+        [unit]="'°C'"
+        [periodStart]="chartPeriods[selectedPeriod]">
+      </app-telemetry-chart>
+      <app-telemetry-chart
+        [title]="'Combustível'"
+        [machineId]="id"
+        [metric]="'fuel'"
+        [colorAverageChart]="'#00a63e'"
+        [lightenFactor]="60"
+        [unit]="'%'"
+        [periodStart]="chartPeriods[selectedPeriod]">
+      </app-telemetry-chart>
+      <app-telemetry-chart
+        [title]="'Pressão'"
+        [machineId]="id"
+        [metric]="'pressure'"
+        [colorAverageChart]="'#9810fa'"
+        [lightenFactor]="43"
+        [unit]="'PSI'"
+        [periodStart]="chartPeriods[selectedPeriod]">
+      </app-telemetry-chart>
+    </section>
+  }
 </section>

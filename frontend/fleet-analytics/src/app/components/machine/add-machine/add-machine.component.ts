@@ -7,11 +7,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MachineType } from '../../../models/machine/machine-type.model';
 import { Machine } from '../../../models/machine/machine.model';
 import { MachineTypeLabelPipe } from '../../../shared/pipes/machine-type-label.pipe';
 import { MachineService } from '../../../services/machine/machine.service';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 
 @Component({
   selector: 'app-add-machine',
@@ -33,19 +34,27 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class AddMachineComponent {
   private readonly _formBuilder = inject(FormBuilder);
   private readonly _router = inject(Router);
-  private readonly _machineService = inject(MachineService)
+  private readonly _machineService = inject(MachineService);
+  private readonly _snackbar = inject(SnackbarService);
 
   readonly machineTypes = Object.values(MachineType);
   readonly form = this._formBuilder.nonNullable.group({
-    code: ['', Validators.required],
-    name: ['', Validators.required],
-    type: [MachineType.Truck, Validators.required],
+    serialNumber: ['', Validators.required],
+    licensePlate: ['', Validators.required],
+    brand: ['', Validators.required],
+    model: ['', Validators.required],
     year: [new Date().getFullYear(), [
-      Validators.required, 
-      Validators.min(1900), 
-      Validators.max(new Date().getFullYear()+1)
+      Validators.required,
+      Validators.min(1900),
+      Validators.max(new Date().getFullYear() + 1)
     ]],
-    mileage: [0, [Validators.required, Validators.min(0)]]
+    color: [''],
+    mileageKm: [0, [Validators.required, Validators.min(0)]],
+    vehicleType: [MachineType.RIGID_TRUCK, Validators.required],
+    maxLoadKg: [0, [Validators.required, Validators.min(0)]],
+    fuelType: [''],
+    nickname: [''],
+    renavam: ['']
   });
   isAddingMachine = false;
 
@@ -59,10 +68,17 @@ export class AddMachineComponent {
       return;
     }
 
-    const newMachine = this.form.getRawValue() as Machine;
+    const newMachine = this.form.getRawValue() as unknown as Machine;
     this.isAddingMachine = true;
-    this._machineService.addMachine(newMachine).subscribe(() => {
-      this._router.navigate(['/machines']);
+    this._machineService.addMachine(newMachine).subscribe({
+      next: () => {
+        this._snackbar.success('Máquina criada com sucesso.');
+        this._router.navigate(['/machines']);
+      },
+      error: () => {
+        this._snackbar.error('Erro ao criar máquina.');
+        this.isAddingMachine = false;
+      }
     });
   }
 

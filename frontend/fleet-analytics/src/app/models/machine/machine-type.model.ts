@@ -1,7 +1,6 @@
 export enum MachineType {
-    Truck = "Truck",
-    Tractor = "Tractor",
-    Utility = "Utility",
-    Excavator = "Excavator",
-    Loader = "Loader"
+    RIGID_TRUCK = "RIGID_TRUCK",
+    ARTICULATED_VEHICLE = "ARTICULATED_VEHICLE",
+    PASSAGER_VEHICLE = "PASSAGER_VEHICLE",
+    AGRICULTURAL_VEHICLE = "AGRICULTURAL_VEHICLE"
 }

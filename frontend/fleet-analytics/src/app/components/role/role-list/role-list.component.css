@@ -1,0 +1,74 @@
+.roles-page {
+  padding: 8px 10px 0;
+}
+
+.roles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 2rem;
+}
+
+.roles-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.add-role-btn {
+  height: 3rem;
+  border-radius: 12px;
+  background: #1f63f2;
+  color: #fff;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0 26px;
+}
+
+.add-role-btn mat-icon {
+  font-size: 25px;
+  width: 25px;
+  height: 25px;
+}
+
+.search-field {
+  width: 100%;
+  margin-bottom: 22px;
+}
+
+.search-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.loading-spinner,
+.no-results {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+}
+
+.no-results p {
+  color: #9aa0aa;
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .roles-header h1 {
+    font-size: 34px;
+  }
+
+  .add-role-btn {
+    font-size: 20px;
+  }
+}

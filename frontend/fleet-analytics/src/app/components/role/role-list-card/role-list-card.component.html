@@ -1,0 +1,34 @@
+<mat-card class="role-card">
+  <div class="role-card-header">
+    <div class="role-icon-wrap">
+      <mat-icon>badge</mat-icon>
+    </div>
+    <div class="role-card-actions">
+      <button mat-icon-button type="button" aria-label="Editar perfil" (click)="onEdit($event)">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button mat-icon-button type="button" aria-label="Excluir perfil" (click)="onDelete($event)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <h2 class="role-name">{{ role.name }}</h2>
+  <p class="role-permissions-count">
+    {{ role.permissions.length }}
+    {{ role.permissions.length === 1 ? 'permissão' : 'permissões' }}
+  </p>
+
+  <ul class="permissions-list">
+    @for (permission of role.permissions; track permission.id) {
+      <li>
+        <span class="permission-name">{{ permission.name | permissionLabel }}</span>
+        @if (permission.description) {
+          <span class="permission-description">{{ permission.name | permissionLabel:'description' }}</span>
+        }
+      </li>
+    } @empty {
+      <li class="empty-permissions">Nenhuma permissão vinculada</li>
+    }
+  </ul>
+</mat-card>

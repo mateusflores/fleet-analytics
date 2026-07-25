@@ -1,0 +1,166 @@
+.profile-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 8px 16px 24px;
+}
+
+.profile-page h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.profile-card,
+.password-card {
+  border: 1px solid #dfe1e5;
+  border-radius: 16px;
+  background: #fff;
+  padding: 24px 28px 28px;
+  margin-top: 1.5rem;
+}
+
+.profile-page h1 + .profile-card {
+  margin-top: 1.5rem;
+}
+
+.password-card-title {
+  margin: 0.5rem 0 2rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.profile-card form,
+.password-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-card form {
+  margin-top: 2.5rem;
+}
+
+.password-card form {
+  margin-top: 1.25rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.edit-link {
+  font-weight: 500;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.profile-summary-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: #155dfc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar mat-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+}
+
+.profile-names {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.profile-role {
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-group label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.field-group mat-form-field {
+  width: 100%;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+  margin-top: 0.5rem;
+}
+
+.actions button {
+  height: 3rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.primary-btn {
+  background: #1f63f2;
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #f6f7f9;
+  color: #2d3139;
+  border: 1px solid #dfe1e5;
+}
+
+.password-submit {
+  width: 100%;
+  height: 3rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}

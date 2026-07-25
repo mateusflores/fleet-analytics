@@ -1,0 +1,44 @@
+<section class="users-page">
+  <header class="users-header">
+    <h1>Usuários</h1>
+
+    <button mat-flat-button type="button" class="add-user-btn" (click)="goToAddUser()">
+      <mat-icon>add</mat-icon>
+      Adicionar
+    </button>
+  </header>
+
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  }
+  @else {
+    @if (users.length === 0) {
+      <div class="no-results">
+        <p>Nenhum usuário encontrado</p>
+      </div>
+    }
+    @else {
+      <section class="user-grid">
+        @for (user of users; track user.id) {
+          <app-user-list-card
+            [user]="user"
+            [isToggling]="togglingId() === user.id"
+            (enable)="onEnable($event)"
+            (disable)="onDisable($event)"
+          ></app-user-list-card>
+        }
+      </section>
+
+      <mat-paginator
+        class="paginator"
+        [length]="totalUsers"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[9, 18, 27]"
+        (page)="onPageChange($event)"
+      ></mat-paginator>
+    }
+  }
+</section>

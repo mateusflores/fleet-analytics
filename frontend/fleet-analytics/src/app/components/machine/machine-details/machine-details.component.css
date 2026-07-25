@@ -20,6 +20,12 @@
   transition: all 0.3s ease;
 }
 
+.machine-details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .machine-card {
   border: 1px solid #dfe1e5;
   border-radius: 16px;
@@ -51,4 +57,119 @@
   justify-content: flex-end;
   align-items: center;
   gap: 1rem;
+}
+
+.machine-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.machine-charts {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.arrow {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.machine-card--editing {
+  border: 1px solid #dfe1e5;
+  border-radius: 16px;
+  box-shadow: none;
+  padding: 28px 30px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.edit-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.edit-card-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.edit-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.machine-card--editing form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-group--full {
+  max-width: calc(50% - 0.75rem);
+}
+
+.machine-card--editing label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.machine-card--editing .field-group mat-form-field {
+  width: 100%;
+}
+
+.primary-btn {
+  background: #1f63f2;
+  color: #fff;
+  border-radius: 12px;
+}
+
+.charts-periods {
+  display: flex;
+  gap: 1rem;
+}
+
+.period-button {
+  color: #1f63f2 !important;
+  background: #fff !important;
+  border-radius: 12px;
+  border: 1px solid #dfe1e5;
+  font-size: 0.9rem;
+}
+
+.period-button.selected {
+  background: #1f63f2 !important;
+  color: #fff !important;
+}
+
+@media (max-width: 768px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .field-group--full {
+    max-width: 100%;
+  }
 }

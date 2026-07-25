@@ -2,11 +2,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { MachineType } from '../../models/machine/machine-type.model';
 
 const LABELS: Record<MachineType, string> = {
-  [MachineType.Truck]: 'Caminhão',
-  [MachineType.Tractor]: 'Trator',
-  [MachineType.Utility]: 'Utilitário',
-  [MachineType.Excavator]: 'Escavadeira',
-  [MachineType.Loader]: 'Carregadeira'
+  [MachineType.RIGID_TRUCK]: 'Veículo pesado',
+  [MachineType.ARTICULATED_VEHICLE]: 'Veículo articulado',
+  [MachineType.PASSAGER_VEHICLE]: 'Veículo de passageiros',
+  [MachineType.AGRICULTURAL_VEHICLE]: 'Veículo agrícola'
 };
 
 @Pipe({

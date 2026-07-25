@@ -2,11 +2,18 @@ import { MachineStatus } from "./machine-status.model";
 import { MachineType } from "./machine-type.model";
 
 export interface Machine {
-  id: number;
-  name: string;
-  code: string;
-  type: MachineType;
+  id: string;
+  serialNumber: string;
+  licensePlate: string;
+  brand: string;
+  model: string;
   year: number;
-  mileage: number;
-  status: MachineStatus;
+  color: string;
+  mileageKm: number;
+  vehicleType: MachineType;
+  maxLoadKg: number;
+  fuelType: string;
+  nickname: string;
+  renavam: string;
+  active: boolean;
 }

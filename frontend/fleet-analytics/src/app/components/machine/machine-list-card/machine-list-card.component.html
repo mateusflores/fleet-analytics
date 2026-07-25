@@ -4,19 +4,19 @@
       <mat-icon>precision_manufacturing</mat-icon>
     </div>
 
-    <span class="machine-status" [class.is-offline]="machine.status === MachineStatus.Offline">
+    <span class="machine-status" [class.is-offline]="!machine.active">
       <span class="status-dot"></span>
-      {{ machine.status }}
+      {{ machine.active ? 'Online' : 'Offline' }}
     </span>
   </div>
 
-  <h2 class="machine-name">{{ machine.name }}</h2>
-  <p class="machine-code">{{ machine.code }}</p>
+  <h2 class="machine-name">{{ machine.nickname }}</h2>
+  <p class="machine-code">{{ machine.serialNumber }}</p>
 
   <dl class="machine-meta">
     <div class="meta-row">
       <dt>Tipo</dt>
-      <dd>{{ machine.type | machineTypeLabel }}</dd>
+      <dd>{{ machine.vehicleType | machineTypeLabel }}</dd>
     </div>
     <div class="meta-row">
       <dt>Ano</dt>
@@ -24,7 +24,7 @@
     </div>
     <div class="meta-row">
       <dt>Kilometragem</dt>
-      <dd>{{ machine.mileage }} km</dd>
+      <dd>{{ machine.mileageKm }} km</dd>
     </div>
   </dl>
 </mat-card>
