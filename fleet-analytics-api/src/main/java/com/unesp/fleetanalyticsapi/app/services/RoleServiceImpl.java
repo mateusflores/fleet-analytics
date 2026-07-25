@@ -7,8 +7,11 @@ import com.unesp.fleetanalyticsapi.model.entities.Permission;
 import com.unesp.fleetanalyticsapi.model.entities.Role;
 import com.unesp.fleetanalyticsapi.model.repositories.PermissionRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.specifications.RoleSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -74,6 +77,12 @@ public class RoleServiceImpl implements RoleService {
 
         role = roleRepository.save(role);
         return toSummary(role);
+    }
+
+    @Override
+    public Page<RoleSummary> search(String name, Pageable pageable) {
+        return roleRepository.findAll(RoleSpecification.nameLike(name), pageable)
+                .map(this::toSummary);
     }
 
     @Override
