@@ -1,5 +1,6 @@
 package com.unesp.fleetanalyticsapi.model.entities;
 
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -49,8 +50,9 @@ public class Vehicle {
     @Column(name = "max_load_kg")
     private BigDecimal maxLoadKg;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "fuel_type")
-    private String fuelType;
+    private FuelType fuelType;
 
     private String nickname;
 

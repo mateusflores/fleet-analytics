@@ -4,6 +4,8 @@ import com.unesp.fleetanalyticsapi.app.dtos.CreateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UpdateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.VehicleSummary;
 import com.unesp.fleetanalyticsapi.app.services.VehicleService;
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
+import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +31,24 @@ public class VehicleController {
     public ResponseEntity<Page<VehicleSummary>> findAll(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(vehicleService.findAll(pageable));
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAuthority('vehicles:view')")
+    public ResponseEntity<Page<VehicleSummary>> search(
+            @RequestParam(required = false) String serialNumber,
+            @RequestParam(required = false) String licensePlate,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String model,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String color,
+            @RequestParam(required = false) String nickname,
+            @RequestParam(required = false) VehicleType vehicleType,
+            @RequestParam(required = false) FuelType fuelType,
+            @RequestParam(required = false) String renavam,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(vehicleService.search(serialNumber, licensePlate, brand, model,
+                year, color, nickname, vehicleType, fuelType, renavam, pageable));
     }
 
     @GetMapping("/{id}")

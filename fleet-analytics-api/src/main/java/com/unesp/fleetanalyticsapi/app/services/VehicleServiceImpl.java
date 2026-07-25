@@ -4,7 +4,10 @@ import com.unesp.fleetanalyticsapi.app.dtos.CreateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UpdateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.VehicleSummary;
 import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
+import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.specifications.VehicleSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -71,11 +74,24 @@ public class VehicleServiceImpl implements VehicleService {
         if (request.fuelType() != null) vehicle.setFuelType(request.fuelType());
         if (request.nickname() != null) vehicle.setNickname(request.nickname());
         if (request.renavam() != null) vehicle.setRenavam(request.renavam());
+        vehicle.setActive(request.active());
 
         vehicle = vehicleRepository.save(vehicle);
         return toSummary(vehicle);
     }
 
+
+    @Override
+    public Page<VehicleSummary> search(String serialNumber, String licensePlate, String brand,
+                                        String model, Integer year, String color, String nickname,
+                                        VehicleType vehicleType, FuelType fuelType, String renavam,
+                                        Pageable pageable) {
+        return vehicleRepository.findAll(
+                        VehicleSpecification.filter(serialNumber, licensePlate, brand, model,
+                                year, color, nickname, vehicleType, fuelType, renavam),
+                        pageable)
+                .map(this::toSummary);
+    }
 
     private VehicleSummary toSummary(Vehicle vehicle) {
         return new VehicleSummary(

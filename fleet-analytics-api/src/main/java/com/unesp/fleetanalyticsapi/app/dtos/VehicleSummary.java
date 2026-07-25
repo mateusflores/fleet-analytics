@@ -1,5 +1,6 @@
 package com.unesp.fleetanalyticsapi.app.dtos;
 
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 
 import java.math.BigDecimal;
@@ -16,7 +17,7 @@ public record VehicleSummary(
         BigDecimal mileageKm,
         VehicleType vehicleType,
         BigDecimal maxLoadKg,
-        String fuelType,
+        FuelType fuelType,
         String nickname,
         String renavam,
         boolean active
