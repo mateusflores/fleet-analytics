@@ -77,6 +77,7 @@ public class UserServiceImpl implements UserService {
 
     private UserSummary toSummary(User user) {
         return new UserSummary(
+                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getEnabled(),

@@ -28,4 +28,11 @@ public class LoginController {
     public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(loginService.refreshToken(request));
     }
+
+    /*
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        TO DO
+    }
+     */
 }

@@ -48,15 +48,13 @@ public class User implements UserDetails {
     @Column(name = "last_update")
     private ZonedDateTime lastUpdate;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return role.getPermissions().stream()
-                .map(p -> new SimpleGrantedAuthority(p.getName()))
-                .toList();
+        return role.getPermissions();
     }
 
     @Override

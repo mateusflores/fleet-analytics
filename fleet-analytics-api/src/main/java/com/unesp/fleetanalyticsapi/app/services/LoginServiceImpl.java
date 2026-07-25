@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,22 +41,7 @@ public class LoginServiceImpl implements LoginService {
                     HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshTokenStr = jwtService.generateRefreshToken(user);
-        Instant accessExpiry = jwtService.extractExpiration(accessToken);
-        Instant refreshExpiry = jwtService.extractExpiration(refreshTokenStr);
-
-        RefreshToken refreshToken = RefreshToken.builder()
-                .token(refreshTokenStr)
-                .user(user)
-                .expiresAt(refreshExpiry.atZone(ZoneId.systemDefault()))
-                .revoked(false)
-                .build();
-        refreshTokenRepository.save(refreshToken);
-
-        long expiresIn = Duration.between(Instant.now(), accessExpiry).getSeconds();
-
-        return new LoginResponse(accessToken, refreshTokenStr, "Bearer", expiresIn);
+        return generateJwt(user);
     }
 
     @Override
@@ -85,21 +71,28 @@ public class LoginServiceImpl implements LoginService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        String newAccessToken = jwtService.generateAccessToken(user);
-        String newRefreshTokenStr = jwtService.generateRefreshToken(user);
-        Instant accessExpiry = jwtService.extractExpiration(newAccessToken);
-        Instant newRefreshExpiry = jwtService.extractExpiration(newRefreshTokenStr);
+        return generateJwt(user);
+    }
 
-        RefreshToken newRefreshToken = RefreshToken.builder()
-                .token(newRefreshTokenStr)
+    private LoginResponse generateJwt(User user) {
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshTokenStr = jwtService.generateRefreshToken(user);
+        Instant accessExpiry = jwtService.extractExpiration(accessToken);
+        Instant refreshExpiry = jwtService.extractExpiration(refreshTokenStr);
+
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token(refreshTokenStr)
                 .user(user)
-                .expiresAt(newRefreshExpiry.atZone(ZoneId.systemDefault()))
+                .expiresAt(refreshExpiry.atZone(ZoneId.systemDefault()))
                 .revoked(false)
                 .build();
-        refreshTokenRepository.save(newRefreshToken);
-
+        refreshTokenRepository.save(refreshToken);
         long expiresIn = Duration.between(Instant.now(), accessExpiry).getSeconds();
 
-        return new LoginResponse(newAccessToken, newRefreshTokenStr, "Bearer", expiresIn);
+        return new LoginResponse(accessToken, refreshTokenStr, "Bearer", user.getId(), expiresIn);
+    }
+
+    private void logout(UUID userId) {
+        // TO DO
     }
 }
