@@ -12,7 +12,6 @@ import com.unesp.fleetanalyticsapi.model.repositories.RefreshTokenRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,8 +55,6 @@ public class LoginServiceImpl implements LoginService {
                     HttpStatus.UNAUTHORIZED, "Refresh token expired");
         }
 
-        String username = jwtService.extractUsername(tokenStr);
-
         RefreshToken storedToken = refreshTokenRepository.findByToken(tokenStr)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Refresh token not found"));
@@ -70,15 +67,12 @@ public class LoginServiceImpl implements LoginService {
         storedToken.setRevoked(true);
         refreshTokenRepository.save(storedToken);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-
-        return generateJwt(user);
+        return generateJwt(storedToken.getUser());
     }
 
     private LoginResponse generateJwt(User user) {
         String accessToken = jwtService.generateAccessToken(user);
-        String refreshTokenStr = jwtService.generateRefreshToken(user);
+        String refreshTokenStr = jwtService.generateRefreshToken(user.getUsername());
         Instant accessExpiry = jwtService.extractExpiration(accessToken);
         Instant refreshExpiry = jwtService.extractExpiration(refreshTokenStr);
 

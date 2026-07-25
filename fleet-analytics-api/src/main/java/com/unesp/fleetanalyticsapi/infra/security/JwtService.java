@@ -36,14 +36,14 @@ public class JwtService {
     }
 
     public String generateAccessToken(UserDetails userDetails) {
-        return buildToken(userDetails, accessTokenExpiration);
+        return buildAccessToken(userDetails);
     }
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(userDetails, refreshTokenExpiration);
+    public String generateRefreshToken(String username) {
+        return buildRefreshToken(username);
     }
 
-    private String buildToken(UserDetails userDetails, long expirationMillis) {
+    private String buildAccessToken(UserDetails userDetails) {
         Instant now = Instant.now();
 
         Set<String> authorities = userDetails.getAuthorities().stream()
@@ -55,7 +55,19 @@ public class JwtService {
                 .subject(userDetails.getUsername())
                 .claim("authorities", authorities)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(expirationMillis)))
+                .expiration(Date.from(now.plusMillis(accessTokenExpiration)))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    private String buildRefreshToken(String username) {
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(username)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(refreshTokenExpiration)))
                 .signWith(signingKey)
                 .compact();
     }
