@@ -17,6 +17,7 @@ public record UpdateVehicleRequest(
         @PositiveOrZero BigDecimal maxLoadKg,
         String fuelType,
         String nickname,
-        String renavam
+        String renavam,
+        boolean active
 ) {
 }

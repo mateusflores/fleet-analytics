@@ -18,5 +18,4 @@ public interface VehicleService {
 
     VehicleSummary update(UUID id, UpdateVehicleRequest request);
 
-    void deactivate(UUID id);
 }

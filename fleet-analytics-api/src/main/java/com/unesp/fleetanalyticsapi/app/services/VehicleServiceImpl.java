@@ -76,13 +76,6 @@ public class VehicleServiceImpl implements VehicleService {
         return toSummary(vehicle);
     }
 
-    @Override
-    public void deactivate(UUID id) {
-        Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + id));
-        vehicle.setActive(false);
-        vehicleRepository.save(vehicle);
-    }
 
     private VehicleSummary toSummary(Vehicle vehicle) {
         return new VehicleSummary(

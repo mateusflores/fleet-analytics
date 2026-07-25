@@ -51,10 +51,4 @@ public class VehicleController {
         return ResponseEntity.ok(vehicleService.update(id, request));
     }
 
-    @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAuthority('vehicles:update')")
-    public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
-        vehicleService.deactivate(id);
-        return ResponseEntity.noContent().build();
-    }
 }
