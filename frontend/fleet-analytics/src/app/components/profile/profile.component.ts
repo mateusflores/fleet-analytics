@@ -50,9 +50,7 @@ export class ProfileComponent implements OnInit {
   updatePassword(): void {
     if (!this.passwordForm.invalid && !this.passwordForm.pending) {
       this.passwordForm.markAllAsTouched();
-      console.log("passou aqui")
       const patch = this.passwordForm.getRawValue();
-      console.log(patch)
       this._authService.changePassword(patch).subscribe({
         next: () => {
           this._snackbar.success('Máquina atualizada com sucesso.');

@@ -16,6 +16,7 @@ import { JwtPayload } from '../../models/auth/jwt-payload.model';
 import { LoginRequest } from '../../models/auth/login-request.model';
 import { RefreshTokenRequest } from '../../models/auth/refresh-token-request.model';
 import { ChangePasswordRequest } from '../../models/auth/change-password-request.model';
+import { LogoutRequest } from '../../models/auth/logout-request.model';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -90,7 +91,6 @@ export class AuthService {
   }
 
   changePassword(request: ChangePasswordRequest): Observable<void> {
-    console.log('entrou aqui')
     return this._httpClient.patch<void>(`${environment.apiBaseUrl}/users/me/password`, request);
   }
 
@@ -146,7 +146,21 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = this.getRefreshToken();
+    console.log(refreshToken)
+
+    if (refreshToken) {
+      const body: LogoutRequest = { refreshToken };
+      this._httpClient.post<void>(`${environment.apiBaseUrl}/auth/logout`, body).subscribe({
+        next: () => {
+          this.clearTokens();
+          this._router.navigate(['/login']);
+        },
+        error: () => { }
+      });
+    }
+
     this.clearTokens();
-    void this._router.navigate(['/login']);
+    this._router.navigate(['/login']);
   }
 }
