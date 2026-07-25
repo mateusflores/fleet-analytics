@@ -24,6 +24,8 @@ public interface TripRepository extends JpaRepository<Trip, UUID> {
 
     boolean existsByVehicleIdAndEndTimeIsNull(UUID vehicleId);
 
+    boolean existsByDriverIdAndEndTimeIsNull(UUID driverId);
+
     @Query("""
             SELECT t
             FROM Trip t

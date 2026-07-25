@@ -29,7 +29,7 @@ public class TripServiceImpl implements TripService {
     private final VehicleRepository vehicleRepository;
 
     @Override
-    @Transactional
+    @Transactional      
     public TripSummary startTrip(CreateTripRequest request) {
         User driver = userRepository.findById(request.driverId())
                 .orElseThrow(() -> new EntityNotFoundException("Driver not found: " + request.driverId()));
@@ -40,6 +40,11 @@ public class TripServiceImpl implements TripService {
         if (tripRepository.existsByVehicleIdAndEndTimeIsNull(request.vehicleId())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Vehicle already has an active trip");
+        }
+
+        if (tripRepository.existsByDriverIdAndEndTimeIsNull(request.driverId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Driver already has an active trip");
         }
 
         Trip trip = Trip.builder()
@@ -94,18 +99,18 @@ public class TripServiceImpl implements TripService {
     @Override
     @Transactional(readOnly = true)
     public TripSummary findActiveByVehicle(UUID vehicleId) {
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow();
+        vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + vehicleId));
 
         return tripRepository.findOngoingTripByVehicle(vehicleId)
                 .map(this::toSummary)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "There is no active trip for vehicle " + vehicle.toString()));
+                        "No active trip found for vehicle: " + vehicleId));
     }
 
     private boolean isAdminUser(UUID userId) {
         return userRepository.findById(userId)
-                .map(user -> "Admin".equals(user.getRole().getName()))
+                .map(user -> user.getRole() != null && "Admin".equals(user.getRole().getName()))
                 .orElse(false);
     }
 
