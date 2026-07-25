@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +51,7 @@ public class JwtService {
                 .collect(Collectors.toSet());
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(userDetails.getUsername())
                 .claim("authorities", authorities)
                 .issuedAt(Date.from(now))
@@ -60,6 +62,10 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return extractClaims(token).getSubject();
+    }
+
+    public String extractJti(String token) {
+        return extractClaims(token).getId();
     }
 
     public Instant extractExpiration(String token) {

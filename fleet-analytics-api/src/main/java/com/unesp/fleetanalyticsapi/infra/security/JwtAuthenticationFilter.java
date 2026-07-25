@@ -21,6 +21,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final AccessTokenBlacklist accessTokenBlacklist;
 
     @Override
     protected void doFilterInternal(
@@ -36,6 +37,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
+
+        if (accessTokenBlacklist.contains(jwtService.extractJti(token))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (jwtService.isTokenExpired(token)) {
             filterChain.doFilter(request, response);

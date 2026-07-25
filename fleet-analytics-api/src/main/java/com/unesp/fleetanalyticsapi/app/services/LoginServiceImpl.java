@@ -2,7 +2,9 @@ package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.LoginRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.LoginResponse;
+import com.unesp.fleetanalyticsapi.app.dtos.LogoutRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.RefreshTokenRequest;
+import com.unesp.fleetanalyticsapi.infra.security.AccessTokenBlacklist;
 import com.unesp.fleetanalyticsapi.infra.security.JwtService;
 import com.unesp.fleetanalyticsapi.model.entities.RefreshToken;
 import com.unesp.fleetanalyticsapi.model.entities.User;
@@ -19,7 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class LoginServiceImpl implements LoginService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AccessTokenBlacklist accessTokenBlacklist;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -92,7 +94,18 @@ public class LoginServiceImpl implements LoginService {
         return new LoginResponse(accessToken, refreshTokenStr, "Bearer", user.getId(), expiresIn);
     }
 
-    private void logout(UUID userId) {
-        // TO DO
+    @Override
+    @Transactional
+    public void logout(String accessToken, LogoutRequest request) {
+        String jti = jwtService.extractJti(accessToken);
+        Instant accessExpiry = jwtService.extractExpiration(accessToken);
+        accessTokenBlacklist.add(jti, accessExpiry);
+
+        RefreshToken storedToken = refreshTokenRepository.findByToken(request.refreshToken())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Refresh token not found"));
+
+        storedToken.setRevoked(true);
+        refreshTokenRepository.save(storedToken);
     }
 }
