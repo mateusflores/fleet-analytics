@@ -68,4 +68,11 @@ public class Vehicle {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
+
+    @Override
+    public String toString() {
+        return nickname != null && !nickname.isBlank()
+                ? nickname
+                : brand + " " + licensePlate;
+    }
 }

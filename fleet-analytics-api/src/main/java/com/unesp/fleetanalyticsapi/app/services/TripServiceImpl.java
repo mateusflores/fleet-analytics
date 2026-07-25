@@ -77,6 +77,7 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TripSummary findById(UUID id) {
         return tripRepository.findById(id)
                 .map(this::toSummary)
@@ -84,16 +85,22 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<TripSummary> findAll(Pageable pageable) {
         return tripRepository.findAll(pageable)
                 .map(this::toSummary);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TripSummary findActiveByVehicle(UUID vehicleId) {
-        return tripRepository.findByVehicleIdAndEndTimeIsNull(vehicleId)
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow();
+
+        return tripRepository.findOngoingTripByVehicle(vehicleId)
                 .map(this::toSummary)
-                .orElseThrow(() -> new EntityNotFoundException("No active trip for vehicle: " + vehicleId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "There is no active trip for vehicle " + vehicle.toString()));
     }
 
     private boolean isAdminUser(UUID userId) {
