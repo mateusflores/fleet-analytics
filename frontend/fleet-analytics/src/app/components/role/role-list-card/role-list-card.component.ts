@@ -1,9 +1,10 @@
-import { Component, Input, output } from '@angular/core';
+import { Component, inject, Input, output } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Role } from '../../../models/role/role.model';
 import { PermissionLabelPipe } from '../../../shared/pipes/permission-label.pipe';
+import { AuthService } from '../../../services/auth/auth.service';
 
 @Component({
   selector: 'app-role-list-card',
@@ -13,6 +14,8 @@ import { PermissionLabelPipe } from '../../../shared/pipes/permission-label.pipe
 })
 export class RoleListCardComponent {
   @Input({ required: true }) role!: Role;
+
+  readonly authService: AuthService = inject(AuthService);
 
   readonly edit = output<Role>();
   readonly remove = output<Role>();

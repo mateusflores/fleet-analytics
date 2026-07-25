@@ -2,10 +2,12 @@
   <header class="roles-header">
     <h1>Perfis</h1>
 
-    <button mat-flat-button type="button" class="add-role-btn" (click)="goToAddRole()">
-      <mat-icon>add</mat-icon>
-      Adicionar
-    </button>
+    @if (authService.hasPermission('roles:create')) {
+      <button mat-flat-button type="button" class="add-role-btn" (click)="goToAddRole()">
+        <mat-icon>add</mat-icon>
+        Adicionar
+      </button>
+    }
   </header>
 
   <mat-form-field appearance="outline" class="search-field">

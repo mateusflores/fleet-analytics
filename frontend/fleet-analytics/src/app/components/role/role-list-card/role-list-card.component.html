@@ -4,12 +4,16 @@
       <mat-icon>badge</mat-icon>
     </div>
     <div class="role-card-actions">
-      <button mat-icon-button type="button" aria-label="Editar perfil" (click)="onEdit($event)">
-        <mat-icon>edit</mat-icon>
-      </button>
-      <button mat-icon-button type="button" aria-label="Excluir perfil" (click)="onDelete($event)">
-        <mat-icon>delete</mat-icon>
-      </button>
+      @if (authService.hasPermission('roles:update')) {
+        <button mat-icon-button type="button" aria-label="Editar perfil" (click)="onEdit($event)">
+          <mat-icon>edit</mat-icon>
+        </button>
+      }
+      @if (authService.hasPermission('roles:delete')) {
+        <button mat-icon-button type="button" aria-label="Excluir perfil" (click)="onDelete($event)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      }
     </div>
   </div>
 

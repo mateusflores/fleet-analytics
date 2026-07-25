@@ -12,6 +12,7 @@ import { RoleService } from '../../../services/role/role.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { RoleListCardComponent } from '../role-list-card/role-list-card.component';
 import { getPtBrPaginatorIntl } from '../../../shared/config/paginator/paginator-intl-pt-br';
+import { AuthService } from '../../../services/auth/auth.service';
 
 @Component({
   selector: 'app-role-list',
@@ -35,6 +36,7 @@ export class RoleListComponent {
   private readonly _router = inject(Router);
   private readonly _snackbar = inject(SnackbarService);
   private readonly _confirmDialog = inject(ConfirmDialogService);
+  readonly authService: AuthService = inject(AuthService);
 
   readonly searchTerm = signal('');
   roles: Role[] = [];
@@ -83,14 +85,26 @@ export class RoleListComponent {
   }
 
   goToAddRole(): void {
+    if (!this.authService.hasPermission('roles:create')) {
+      return;
+    }
+
     this._router.navigate(['/roles/add']);
   }
 
   onEdit(role: Role): void {
+    if (!this.authService.hasPermission('roles:update')) {
+      return;
+    }
+
     this._router.navigate(['/roles/edit', role.id]);
   }
 
   onDelete(role: Role): void {
+    if (!this.authService.hasPermission('roles:delete')) {
+      return;
+    }
+
     this._confirmDialog
       .confirm({
         title: 'Excluir perfil',

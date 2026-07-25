@@ -1,0 +1,40 @@
+<section class="trips-page">
+  <header class="trips-header">
+    <h1>Viagens</h1>
+    @if (authService.hasPermission('travel:start')) {
+      <button mat-flat-button type="button" class="start-trip-btn"
+        (click)="openStartTripDialog()">
+        <mat-icon>
+          add<
+        </mat-icon>
+        Iniciar viagem
+      </button>
+    }
+  </header>
+  @if (isLoading) {
+    <div class="loading-spinner"><mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner></div>
+  } 
+  @else if (trips.length === 0) {
+    <div class="no-results">
+      <p>Nenhuma viagem encontrada</p>
+    </div>
+  } 
+  @else {
+    <section class="trip-grid">
+      @for (trip of trips; track trip.id) { 
+        <app-trip-list-card 
+          [trip]="trip" 
+          [isEnding]="endingTripId === trip.id"
+          (endTrip)="onEndTrip($event)">
+        </app-trip-list-card> 
+      }
+    </section>
+    <mat-paginator class="paginator" 
+      [length]="totalTrips" 
+      [pageSize]="pageSize" 
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[9, 18, 27]" 
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  }
+</section>

@@ -11,7 +11,9 @@ import { Permission } from '../../../models/role/permission.model';
 import { CreateRoleRequest } from '../../../models/role/create-role-request.model';
 import { RoleService } from '../../../services/role/role.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
+import { UserService } from '../../../services/user/user.service';
 import { PermissionLabelPipe } from '../../../shared/pipes/permission-label.pipe';
+import { AuthService } from '../../../services/auth/auth.service';
 
 @Component({
   selector: 'app-role-form',
@@ -34,8 +36,12 @@ export class RoleFormComponent implements OnInit {
 
   private readonly _formBuilder = inject(FormBuilder);
   private readonly _roleService = inject(RoleService);
+  private readonly _userService = inject(UserService);
   private readonly _router = inject(Router);
   private readonly _snackbar = inject(SnackbarService);
+  readonly authService: AuthService = inject(AuthService);
+
+  private currentRoleName = '';
 
   readonly form = this._formBuilder.nonNullable.group({
     name: ['', Validators.required]
@@ -52,6 +58,10 @@ export class RoleFormComponent implements OnInit {
 
   get pageTitle(): string {
     return this.isEditMode ? 'Editar Perfil' : 'Adicionar Perfil';
+  }
+
+  get userCanEdit(): boolean {
+    return this.isEditMode ? this.authService.hasPermission('roles:update') : this.authService.hasPermission('roles:create');
   }
 
   ngOnInit(): void {
@@ -74,6 +84,7 @@ export class RoleFormComponent implements OnInit {
   private loadRole(id: string): void {
     this._roleService.getRoleById(id).subscribe({
       next: (role) => {
+        this.currentRoleName = role.name;
         this.form.patchValue({ name: role.name });
         this.selectedPermissionIds = new Set(role.permissions.map((permission) => permission.id));
         this.isLoading = false;
@@ -101,6 +112,29 @@ export class RoleFormComponent implements OnInit {
     this._router.navigate(['/roles']);
   }
 
+  private refreshTokenIfCurrentUserRoleMatches(): void {
+    const username = this.authService.decodeAccessToken()?.sub;
+    if (!username || !this.currentRoleName) {
+      return;
+    }
+
+    this._userService.getUserByUsername(username).subscribe({
+      next: (user) => {
+        if (user.roleName === this.currentRoleName) {
+          this.authService.refreshTokens().subscribe({
+            next: () => {},
+            error: (error) => {
+              console.error('Erro ao atualizar token após alteração da role do usuário logado', error);
+            }
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Erro ao buscar usuário logado para refresh de token', error);
+      }
+    });
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -114,6 +148,13 @@ export class RoleFormComponent implements OnInit {
 
     this.isSaving = true;
     const isEdit = this.isEditMode && !!this.id;
+
+    if (!this.userCanEdit) {
+      this._snackbar.error(`Você não tem permissão para ${isEdit ? 'atualizar': 'criar'} perfis.`);
+      this.isSaving = false;
+      return;
+    }
+
     const request$ = isEdit
       ? this._roleService.updateRole(this.id!, request)
       : this._roleService.createRole(request);
@@ -123,6 +164,10 @@ export class RoleFormComponent implements OnInit {
         this._snackbar.success(
           isEdit ? 'Perfil atualizado com sucesso.' : 'Perfil criado com sucesso.'
         );
+        if (isEdit) {
+          this.refreshTokenIfCurrentUserRoleMatches();
+        }
+
         this._router.navigate(['/roles']);
       },
       error: (error) => {

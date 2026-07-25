@@ -10,6 +10,7 @@ import { RoleFormComponent } from './components/role/role-form/role-form.compone
 import { UserListComponent } from './components/user/user-list/user-list.component';
 import { UserFormComponent } from './components/user/user-form/user-form.component';
 import { UserDetailsComponent } from './components/user/user-details/user-details.component';
+import { TripListComponent } from './components/trip/trip-list/trip-list.component';
 import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
 
@@ -46,16 +47,24 @@ export const routes: Routes = [
         canActivate: [permissionGuard('vehicles:create')]
       },
       {
+        path: 'trips',
+        component: TripListComponent,
+        canActivate: [permissionGuard('travel:read')]
+      },
+      {
         path: 'roles',
-        component: RoleListComponent
+        component: RoleListComponent,
+        canActivate: [permissionGuard('roles:read')]
       },
       {
         path: 'roles/add',
-        component: RoleFormComponent
+        component: RoleFormComponent,
+        canActivate: [permissionGuard('roles:create')]
       },
       {
         path: 'roles/edit/:id',
-        component: RoleFormComponent
+        component: RoleFormComponent,
+        canActivate: [permissionGuard('roles:read')]
       },
       {
         path: 'users',

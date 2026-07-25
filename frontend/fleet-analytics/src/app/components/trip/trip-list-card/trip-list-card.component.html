@@ -1,0 +1,31 @@
+<mat-card class="trip-card">
+  <div class="trip-card-header">
+    <div class="trip-icon-wrap"><mat-icon>route</mat-icon></div>
+    @if (!trip.endTime) {
+      <span class="trip-status"><span class="status-dot"></span>Em andamento</span>
+    } 
+    @else {
+      <span class="trip-status is-finished">Encerrada</span>
+    }
+  </div>
+  <h2 class="trip-name">{{ trip.vehiclePlate }}</h2>
+  <p class="trip-driver">Motorista: {{ trip.driverName }}</p>
+  <dl class="trip-meta">
+    <div class="meta-row">
+      <dt>Início</dt>
+      <dd>{{ trip.startTime | date:'dd/MM/yyyy HH:mm' }}</dd>
+    </div>
+    <div class="meta-row">
+      <dt>Encerramento</dt>
+      <dd>{{ trip.endTime ? (trip.endTime | date:'dd/MM/yyyy HH:mm') : '--' }}</dd>
+    </div>
+  </dl>
+  @if (authService.hasPermission('travel:start') && !trip.endTime) {
+    <div class="card-actions">
+      <button mat-stroked-button type="button" (click)="onEndTrip($event)" [disabled]="isEnding">
+        <mat-icon>stop_circle</mat-icon>
+        Encerrar viagem
+      </button>
+    </div>
+  }
+</mat-card>

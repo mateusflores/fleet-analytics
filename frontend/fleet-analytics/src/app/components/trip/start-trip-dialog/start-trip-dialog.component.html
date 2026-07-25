@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>Iniciar viagem</h2>
+<mat-dialog-content>
+  @if (isLoadingMachines) {
+    <div class="loading"><mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner></div>
+  } 
+  @else {
+    <form [formGroup]="form">
+      <mat-form-field appearance="outline">
+        <mat-label>Veículo</mat-label>
+        <mat-select formControlName="vehicleId">
+          @for (machine of machines; track machine.id) {
+            <mat-option [value]="machine.id">
+              {{ machine.nickname }} — {{ machine.licensePlate }}
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.controls.vehicleId.touched && form.controls.vehicleId.invalid) { 
+          <mat-error>Selecione um veículo.</mat-error> 
+        }
+      </mat-form-field>
+    </form>
+  }
+</mat-dialog-content>
+<mat-dialog-actions class="actions">
+  <button mat-button type="button" class="cancel-btn" (click)="onCancel()" [disabled]="isStarting">Cancelar</button>
+  <button mat-flat-button type="button" class="start-btn" (click)="onStart()" [disabled]="isLoadingMachines || isStarting">
+     @if (isStarting) { 
+      <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner> 
+    } 
+    @else { 
+      Iniciar 
+    }
+  </button>
+</mat-dialog-actions>

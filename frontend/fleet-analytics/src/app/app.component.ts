@@ -55,6 +55,11 @@ export class AppComponent {
       route: '/machines'
     },
     {
+      label: 'Viagens',
+      icon: 'route',
+      route: '/trips'
+    },
+    {
       label: 'Perfis',
       icon: 'badge',
       route: '/roles'

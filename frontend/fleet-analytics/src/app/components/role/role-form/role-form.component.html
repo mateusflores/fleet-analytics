@@ -35,6 +35,7 @@
             @for (permission of permissions; track permission.id) {
               <label class="permission-item">
                 <mat-checkbox
+                  [disabled]="!userCanEdit"
                   [checked]="isPermissionSelected(permission.id)"
                   (change)="onPermissionToggle(permission.id, $event.checked)"
                 ></mat-checkbox>

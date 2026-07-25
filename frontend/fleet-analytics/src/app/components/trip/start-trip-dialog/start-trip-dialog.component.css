@@ -1,0 +1,44 @@
+mat-dialog-content {
+    min-width: 320px;
+    padding-top: 8px !important;
+}
+
+mat-form-field {
+    width: 100%;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+    margin-top: 1rem;
+}
+  
+.actions button {
+    height: 3rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.start-btn {
+    background: #1f63f2;
+    color: #fff;
+    min-width: 88px;
+}
+
+.cancel-btn {
+    background: #f6f7f9;
+    color: #2d3139;
+    border: 1px solid #dfe1e5;
+}
+
+.start-btn mat-progress-spinner {
+    margin: 0 auto;
+}
