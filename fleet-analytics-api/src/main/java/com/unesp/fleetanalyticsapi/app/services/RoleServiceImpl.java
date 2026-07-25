@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -42,9 +43,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleSummary create(CreateRoleRequest request) {
-        Set<Permission> permissions = permissionRepository.findAllById(request.permissionIds())
-                .stream()
-                .collect(Collectors.toSet());
+        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
 
         if (permissions.size() != request.permissionIds().size()) {
             throw new IllegalArgumentException("One or more permission IDs are invalid");
@@ -64,9 +63,7 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Role not found: " + id));
 
-        Set<Permission> permissions = permissionRepository.findAllById(request.permissionIds())
-                .stream()
-                .collect(Collectors.toSet());
+        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
 
         if (permissions.size() != request.permissionIds().size()) {
             throw new IllegalArgumentException("One or more permission IDs are invalid");
