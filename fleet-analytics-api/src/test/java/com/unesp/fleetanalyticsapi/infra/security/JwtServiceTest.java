@@ -1,19 +1,23 @@
 package com.unesp.fleetanalyticsapi.infra.security;
 
+import com.unesp.fleetanalyticsapi.model.entities.Permission;
+import com.unesp.fleetanalyticsapi.model.entities.Role;
+import com.unesp.fleetanalyticsapi.model.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,9 +38,9 @@ class JwtServiceTest {
 
     @Test
     void accessTokenShouldContainAuthoritiesClaim() {
-        UserDetails userDetails = createUserDetails("testuser", "users:read", "users:write");
+        User user = createUser("testuser", "users:read", "users:write");
 
-        String token = jwtService.generateAccessToken(userDetails);
+        String token = jwtService.generateAccessToken(user);
 
         Claims claims = parseClaims(token);
         assertNotNull(claims.get("authorities"));
@@ -70,11 +74,11 @@ class JwtServiceTest {
 
     @Test
     void refreshTokenShouldBeSmallerThanAccessToken() {
-        UserDetails userDetails = createUserDetails("testuser",
+        User user = createUser("testuser",
                 "users:read", "users:write", "users:create", "users:management",
                 "analytics:view", "analytics:export", "reports:generate");
 
-        String accessToken = jwtService.generateAccessToken(userDetails);
+        String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken("testuser");
 
         assertTrue(refreshToken.length() < accessToken.length());
@@ -109,6 +113,16 @@ class JwtServiceTest {
         assertTrue(expiration.isAfter(Instant.now()));
     }
 
+    @Test
+    void accessTokenShouldContainUserIdClaim() {
+        User user = createUser("testuser", "users:read");
+
+        String token = jwtService.generateAccessToken(user);
+
+        Claims claims = parseClaims(token);
+        assertEquals(user.getId().toString(), claims.get("userId").toString());
+    }
+
     private Claims parseClaims(String token) {
         byte[] keyBytes = Base64.getDecoder().decode(SECRET);
         SecretKey signingKey = Keys.hmacShaKeyFor(keyBytes);
@@ -119,24 +133,19 @@ class JwtServiceTest {
                 .getPayload();
     }
 
-    private static UserDetails createUserDetails(String username, String... authorities) {
-        return new UserDetails() {
-            @Override
-            public Collection<? extends GrantedAuthority> getAuthorities() {
-                return List.of(authorities).stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .toList();
-            }
-
-            @Override
-            public String getPassword() {
-                return "password";
-            }
-
-            @Override
-            public String getUsername() {
-                return username;
-            }
-        };
+    private static User createUser(String username, String... authorities) {
+        Set<Permission> permissions = Arrays.stream(authorities)
+                .map(a -> Permission.builder().name(a).build())
+                .collect(Collectors.toSet());
+        Role role = Role.builder()
+                .name("TEST_ROLE")
+                .permissions(permissions)
+                .build();
+        return User.builder()
+                .id(UUID.randomUUID())
+                .username(username)
+                .password("password")
+                .role(role)
+                .build();
     }
 }

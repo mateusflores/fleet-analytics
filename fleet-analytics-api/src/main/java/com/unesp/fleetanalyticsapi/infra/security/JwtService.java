@@ -1,5 +1,6 @@
 package com.unesp.fleetanalyticsapi.infra.security;
 
+import com.unesp.fleetanalyticsapi.model.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -9,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
@@ -35,24 +35,25 @@ public class JwtService {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public String generateAccessToken(UserDetails userDetails) {
-        return buildAccessToken(userDetails);
+    public String generateAccessToken(User user) {
+        return buildAccessToken(user);
     }
 
     public String generateRefreshToken(String username) {
         return buildRefreshToken(username);
     }
 
-    private String buildAccessToken(UserDetails userDetails) {
+    private String buildAccessToken(User user) {
         Instant now = Instant.now();
 
-        Set<String> authorities = userDetails.getAuthorities().stream()
+        Set<String> authorities = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
-                .subject(userDetails.getUsername())
+                .subject(user.getUsername())
+                .claim("userId", user.getId())
                 .claim("authorities", authorities)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(accessTokenExpiration)))
