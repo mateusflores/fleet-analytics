@@ -1,4 +1,4 @@
-<mat-card class="user-card">
+<mat-card class="user-card" role="button" tabindex="0" (click)="onDetails()" (keydown.enter)="onDetails()" (keydown.space)="onDetails()">
   <div class="user-card-header">
     <div class="user-icon-wrap">
       <mat-icon>person</mat-icon>
@@ -28,8 +28,22 @@
     </div>
   </div>
 
-  <h2 class="user-name">{{ user.username }}</h2>
-  <p class="user-email">{{ user.email }}</p>
+  <h2 class="user-name">{{ user.firstName }} {{ user.lastName }}</h2>
+
+  <dl class="user-details">
+    <div class="detail-row">
+      <dt>Usuário</dt>
+      <dd>{{ user.username }}</dd>
+    </div>
+    <div class="detail-row">
+      <dt>E-mail</dt>
+      <dd>{{ user.email }}</dd>
+    </div>
+    <div class="detail-row">
+      <dt>Telefone</dt>
+      <dd>{{ user.phone }}</dd>
+    </div>
+  </dl>
 
   <div class="user-meta">
     <span class="user-role">{{ user.roleName }}</span>

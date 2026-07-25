@@ -156,12 +156,11 @@
         <div class="field-group">
           <label>Combustível</label>
           <mat-form-field appearance="outline">
-            <input
-              matInput
-              type="text"
-              formControlName="fuelType"
-              placeholder="Ex: Diesel"
-            />
+            <mat-select formControlName="fuelType">
+              @for (fuelType of machineFuelTypes; track fuelType) {
+                <mat-option [value]="fuelType">{{ fuelType | machineFuelTypeLabel }}</mat-option>
+              }
+            </mat-select>
             @if (fieldError('fuelType'); as msg) {
               <mat-error>{{ msg }}</mat-error>
             }

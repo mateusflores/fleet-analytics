@@ -8,6 +8,30 @@
     </button>
   </header>
 
+  <div class="search-container">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        placeholder="Buscar usuários..."
+        [value]="searchTerm()"
+        (input)="onSearch($event)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="search-select">
+      <mat-select
+        [value]="searchField()"
+        aria-label="Campo para busca"
+        (selectionChange)="onSearchFieldChange($event.value)"
+      >
+        @for (field of searchFields; track field.value) {
+          <mat-option [value]="field.value">{{ field.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
   @if (isLoading) {
     <div class="loading-spinner">
       <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
@@ -21,10 +45,11 @@
     }
     @else {
       <section class="user-grid">
-        @for (user of users; track user.id) {
+        @for (user of users; track user.userId) {
           <app-user-list-card
             [user]="user"
-            [isToggling]="togglingId() === user.id"
+            [isToggling]="togglingId() === user.userId"
+            (details)="goToUserDetails($event)"
             (enable)="onEnable($event)"
             (disable)="onDisable($event)"
           ></app-user-list-card>

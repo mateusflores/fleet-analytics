@@ -1,0 +1,62 @@
+<section class="user-details-page">
+  <a class="back-link" routerLink="/users">
+    <mat-icon>arrow_back</mat-icon>
+    Voltar
+  </a>
+
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  } @else if (user) {
+    <mat-card class="user-card">
+      <div class="user-card-header">
+        <h1>Editar usuário</h1>
+        <div class="header-actions">
+          <button mat-flat-button color="primary" type="submit" form="user-edit-form" [disabled]="isSaving">
+            @if (isSaving) {
+              <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
+            } @else {
+              Salvar
+            }
+          </button>
+        </div>
+      </div>
+
+      <form id="user-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit()">
+        <div class="field-row">
+          <div class="field-group">
+            <label for="firstName">Nome</label>
+            <mat-form-field appearance="outline">
+              <input id="firstName" matInput formControlName="firstName" [disabled]="authService.hasPermission('users:management')" />
+              @if (fieldError('firstName'); as message) { <mat-error>{{ message }}</mat-error> }
+            </mat-form-field>
+          </div>
+          <div class="field-group">
+            <label for="lastName">Sobrenome</label>
+            <mat-form-field appearance="outline">
+              <input id="lastName" matInput formControlName="lastName" [disabled]="authService.hasPermission('users:management')"/>
+              @if (fieldError('lastName'); as message) { <mat-error>{{ message }}</mat-error> }
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="email">E-mail</label>
+            <mat-form-field appearance="outline">
+              <input id="email" matInput type="email" formControlName="email" [disabled]="authService.hasPermission('users:management')"/>
+              @if (fieldError('email'); as message) { <mat-error>{{ message }}</mat-error> }
+            </mat-form-field>
+          </div>
+          <div class="field-group">
+            <label for="phone">Telefone</label>
+            <mat-form-field appearance="outline">
+              <input id="phone" matInput type="tel" formControlName="phone" [disabled]="authService.hasPermission('users:management')"/>
+              @if (fieldError('phone'); as message) { <mat-error>{{ message }}</mat-error> }
+            </mat-form-field>
+          </div>
+        </div>
+      </form>
+    </mat-card>
+  }
+</section>

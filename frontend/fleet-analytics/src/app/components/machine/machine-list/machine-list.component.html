@@ -2,21 +2,37 @@
   <header class="machines-header">
     <h1>Máquinas</h1>
 
-    <button mat-flat-button type="button" class="add-machine-btn" (click)="goToAddMachine()">
-      <mat-icon>add</mat-icon>
-      Adicionar
-    </button>
+    @if (authService.hasPermission('vehicles:create')) {
+      <button mat-flat-button type="button" class="add-machine-btn" (click)="goToAddMachine()">
+        <mat-icon>add</mat-icon>
+        Adicionar
+      </button>
+    }
   </header>
 
-  <mat-form-field appearance="outline" class="search-field">
-    <mat-icon matPrefix>search</mat-icon>
-    <input
-      matInput
-      placeholder="Buscar máquinas..."
-      [value]="searchTerm()"
-      (input)="onSearch($event)"
-    />
-  </mat-form-field>
+  <div class="search-container">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        placeholder="Buscar máquinas..."
+        [value]="searchTerm()"
+        (input)="onSearch($event)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="search-select">
+      <mat-select
+        [value]="searchField()"
+        aria-label="Campo para busca"
+        (selectionChange)="onSearchFieldChange($event.value)"
+      >
+        @for (field of searchFields; track field.value) {
+          <mat-option [value]="field.value">{{ field.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
 
   @if (isLoading) {
     <div class="loading-spinner">
@@ -30,8 +46,8 @@
       </div>
     }
     @else {
-    <section class="machine-grid">
-      @for (machine of filteredMachines; track machine.id) {
+      <section class="machine-grid">
+        @for (machine of filteredMachines; track machine.id) {
           <app-machine-list-card [machine]="machine"></app-machine-list-card>
         }
       </section>

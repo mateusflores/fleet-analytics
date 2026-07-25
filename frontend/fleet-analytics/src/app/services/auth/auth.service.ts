@@ -12,8 +12,10 @@ import {
 } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthTokens } from '../../models/auth/auth-tokens.model';
+import { JwtPayload } from '../../models/auth/jwt-payload.model';
 import { LoginRequest } from '../../models/auth/login-request.model';
 import { RefreshTokenRequest } from '../../models/auth/refresh-token-request.model';
+import { ChangePasswordRequest } from '../../models/auth/change-password-request.model';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -42,10 +44,54 @@ export class AuthService {
     return !!this.getAccessToken();
   }
 
+  getAuthorities(): string[] {
+    const payload = this.decodeAccessToken();
+    return payload?.authorities ?? [];
+  }
+
+  hasPermission(permission: string): boolean {
+    return this.getAuthorities().includes(permission);
+  }
+
+  hasAnyPermission(...permissions: string[]): boolean {
+    const authorities = this.getAuthorities();
+    return permissions.some((permission) => authorities.includes(permission));
+  }
+
+  hasAllPermissions(...permissions: string[]): boolean {
+    const authorities = this.getAuthorities();
+    return permissions.every((permission) => authorities.includes(permission));
+  }
+
+  decodeAccessToken(): JwtPayload | null {
+    const token = this.getAccessToken();
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) {
+        return null;
+      }
+
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(base64);
+      return JSON.parse(decoded) as JwtPayload;
+    } catch {
+      return null;
+    }
+  }
+
   login(request: LoginRequest): Observable<AuthTokens> {
     return this._httpClient
       .post<AuthTokens>(`${environment.apiBaseUrl}/auth/login`, request)
       .pipe(tap((tokens) => this.saveTokens(tokens)));
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    console.log('entrou aqui')
+    return this._httpClient.patch<void>(`${environment.apiBaseUrl}/users/me/password`, request);
   }
 
   saveTokens(tokens: AuthTokens): void {

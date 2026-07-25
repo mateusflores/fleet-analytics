@@ -1,5 +1,6 @@
 import { MachineStatus } from "./machine-status.model";
 import { MachineType } from "./machine-type.model";
+import { MachineFuelType } from "./mahcine-fuel-type.model";
 
 export interface Machine {
   id: string;
@@ -12,7 +13,7 @@ export interface Machine {
   mileageKm: number;
   vehicleType: MachineType;
   maxLoadKg: number;
-  fuelType: string;
+  fuelType: MachineFuelType;
   nickname: string;
   renavam: string;
   active: boolean;

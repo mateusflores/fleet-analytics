@@ -9,6 +9,8 @@
   flex-direction: column;
 }
 
+.user-card { cursor: pointer; }
+
 .user-card-header {
   display: flex;
   align-items: center;
@@ -41,13 +43,37 @@
   font-weight: 500;
   line-height: 1.15;
   color: #1f2937;
+  margin-bottom: 1rem;
 }
 
-.user-email {
-  margin: 10px 0 18px;
-  color: #8a9099;
+.user-details {
+  margin: 0;
+  margin-top: 10px;
+  margin-bottom: 18px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.detail-row dt {
+  margin: 0;
+  color: #9aa0aa;
   font-size: 1rem;
-  word-break: break-word;
+  flex-shrink: 0;
+}
+
+.detail-row dd {
+  margin: 0;
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .user-meta {

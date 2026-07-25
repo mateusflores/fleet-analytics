@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { CreateRoleRequest } from '../../models/role/create-role-request.model';
 import { Permission } from '../../models/role/permission.model';
 import { Role } from '../../models/role/role.model';
+import { PaginatedResponse } from '../../responses/paginated-response.model';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +15,12 @@ export class RoleService {
   private readonly _rolesUrl = `${environment.apiBaseUrl}/roles`;
   private readonly _permissionsUrl = `${environment.apiBaseUrl}/permissions`;
 
-  getRoles(): Observable<Role[]> {
-    return this._httpClient.get<Role[]>(this._rolesUrl);
+  getRoles(name: string, page = 0, pageSize = 9): Observable<PaginatedResponse<Role>> {
+    return this._httpClient.get<PaginatedResponse<Role>>(`${this._rolesUrl}/search?name=${name}&page=${page}&size=${pageSize}`);
+  }
+
+  getRolesList(): Observable<PaginatedResponse<Role>> {
+    return this._httpClient.get<PaginatedResponse<Role>>(`${this._rolesUrl}`);
   }
 
   getRoleById(id: string): Observable<Role> {

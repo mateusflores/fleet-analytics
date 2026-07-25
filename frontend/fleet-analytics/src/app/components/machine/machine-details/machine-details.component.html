@@ -25,9 +25,11 @@
                 <span class="status-dot"></span>
                 {{ machine.active ? 'Online' : 'Offline' }}
               </span>
-              <button mat-icon-button type="button" aria-label="Editar máquina" (click)="startEdit()">
-                <mat-icon>edit</mat-icon>
-              </button>
+              @if (authService.hasPermission('vehicles:update')) {
+                <button mat-icon-button type="button" aria-label="Editar máquina" (click)="startEdit()">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              }
             </div>
           </section>
         }
@@ -172,14 +174,18 @@
                 <div class="field-group">
                   <label for="edit-fuelType">Combustível</label>
                   <mat-form-field appearance="outline">
-                    <input id="edit-fuelType" matInput type="text" formControlName="fuelType" />
+                    <mat-select id="edit-fuelType" formControlName="fuelType">
+                      @for (fuelType of machineFuelTypes; track fuelType) {
+                        <mat-option [value]="fuelType">{{ fuelType | machineFuelTypeLabel }}</mat-option>
+                      }
+                    </mat-select>
                     @if (fieldError('fuelType'); as msg) {
                       <mat-error>{{ msg }}</mat-error>
                     }
                   </mat-form-field>
                 </div>
                 <div class="field-group">
-                  <label for="edit-renavam">RENAVAM</label>
+                  <label for="edit-color">RENAVAM</label>
                   <mat-form-field appearance="outline">
                     <input id="edit-renavam" matInput type="text" formControlName="renavam" />
                     @if (fieldError('renavam'); as msg) {
@@ -187,6 +193,18 @@
                     }
                   </mat-form-field>
                 </div>
+              </div>
+              <div class="field-group">
+                <label for="edit-active">Ativo</label>
+                <mat-form-field appearance="outline">
+                  <mat-select id="edit-active" formControlName="active">
+                    <mat-option [value]="true">Sim</mat-option>
+                    <mat-option [value]="false">Não</mat-option>
+                  </mat-select>
+                  @if (fieldError('active'); as msg) {
+                    <mat-error>{{ msg }}</mat-error>
+                  }
+                </mat-form-field>
               </div>
             </form>
           </mat-card>

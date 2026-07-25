@@ -13,6 +13,8 @@ import { Machine } from '../../../models/machine/machine.model';
 import { MachineTypeLabelPipe } from '../../../shared/pipes/machine-type-label.pipe';
 import { MachineService } from '../../../services/machine/machine.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
+import { MachineFuelType } from '../../../models/machine/mahcine-fuel-type.model';
+import { MachineFuelTypeLabelPipe } from '../../../shared/pipes/machine-fuel-type-label.pipe';
 
 @Component({
   selector: 'app-add-machine',
@@ -26,6 +28,7 @@ import { SnackbarService } from '../../../services/snackbar/snackbar.service';
     MatButtonModule,
     MatIconModule,
     MachineTypeLabelPipe,
+    MachineFuelTypeLabelPipe,
     MatProgressSpinnerModule
   ],
   templateUrl: './add-machine.component.html',
@@ -38,6 +41,7 @@ export class AddMachineComponent {
   private readonly _snackbar = inject(SnackbarService);
 
   readonly machineTypes = Object.values(MachineType);
+  readonly machineFuelTypes = Object.values(MachineFuelType);
   readonly form = this._formBuilder.nonNullable.group({
     serialNumber: ['', Validators.required],
     licensePlate: ['', Validators.required],
@@ -52,9 +56,9 @@ export class AddMachineComponent {
     mileageKm: [0, [Validators.required, Validators.min(0)]],
     vehicleType: [MachineType.RIGID_TRUCK, Validators.required],
     maxLoadKg: [0, [Validators.required, Validators.min(0)]],
-    fuelType: [''],
-    nickname: [''],
-    renavam: ['']
+    fuelType: [MachineFuelType.GASOLINE, Validators.required],
+    nickname: ['', Validators.required],
+    renavam: ['', Validators.required]
   });
   isAddingMachine = false;
 
@@ -69,6 +73,7 @@ export class AddMachineComponent {
     }
 
     const newMachine = this.form.getRawValue() as unknown as Machine;
+    newMachine.active = true;
     this.isAddingMachine = true;
     this._machineService.addMachine(newMachine).subscribe({
       next: () => {

@@ -1,7 +1,5 @@
-import { Machine } from "../models/machine/machine.model";
-
-export interface PaginatedMachinesResponse {
-    content: Machine[];
+export interface PaginatedResponse<T> {
+    content: T[];
     totalElements: number;
     totalPages: number;
     pageable: {

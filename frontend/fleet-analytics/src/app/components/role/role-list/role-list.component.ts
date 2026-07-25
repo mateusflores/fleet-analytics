@@ -1,8 +1,9 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { Role } from '../../../models/role/role.model';
@@ -10,7 +11,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog/confirm-d
 import { RoleService } from '../../../services/role/role.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { RoleListCardComponent } from '../role-list-card/role-list-card.component';
-import { PERMISSION_TRANSLATIONS } from '../../../shared/pipes/permission-translations';
+import { getPtBrPaginatorIntl } from '../../../shared/config/paginator/paginator-intl-pt-br';
 
 @Component({
   selector: 'app-role-list',
@@ -19,57 +20,61 @@ import { PERMISSION_TRANSLATIONS } from '../../../shared/pipes/permission-transl
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatPaginatorModule,
     MatProgressSpinnerModule,
     RoleListCardComponent
+  ],
+  providers: [
+    { provide: MatPaginatorIntl, useFactory: getPtBrPaginatorIntl }
   ],
   templateUrl: './role-list.component.html',
   styleUrl: './role-list.component.css'
 })
-export class RoleListComponent implements OnInit {
+export class RoleListComponent {
   private readonly _roleService = inject(RoleService);
   private readonly _router = inject(Router);
   private readonly _snackbar = inject(SnackbarService);
   private readonly _confirmDialog = inject(ConfirmDialogService);
 
   readonly searchTerm = signal('');
-  readonly roles = signal<Role[]>([]);
-  readonly isLoading = signal(true);
+  roles: Role[] = [];
+  isLoading = true;
+  pageIndex = 0;
+  pageSize = 9;
+  totalRoles = 0;
   readonly deletingId = signal<string | null>(null);
 
-  readonly filteredRoles = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const roles = this.roles();
-    if (!term) {
-      return roles;
-    }
-    return roles.filter((role) =>
-      role.name.toLowerCase().includes(term)
-      || role.permissions.some((permission) => {
-        const translation = PERMISSION_TRANSLATIONS[permission.name];
-        return permission.name.toLowerCase().includes(term)
-          || (permission.description ?? '').toLowerCase().includes(term)
-          || (translation?.name.toLowerCase().includes(term) ?? false)
-          || (translation?.description.toLowerCase().includes(term) ?? false);
-      })
-    );
-  });
+  constructor() {
+    effect((onCleanup) => {
+      const term = this.searchTerm();
+      const timeout = setTimeout(() => {
+        this.pageIndex = 0;
+        this.loadRoles(term, this.pageIndex);
+      }, 300);
 
-  ngOnInit(): void {
-    this.loadRoles();
+      onCleanup(() => clearTimeout(timeout));
+    });
   }
 
-  loadRoles(): void {
-    this.isLoading.set(true);
-    this._roleService.getRoles().subscribe({
-      next: (roles) => {
-        this.roles.set(roles);
-        this.isLoading.set(false);
+  private loadRoles(searchTerm: string, page: number): void {
+    this.isLoading = true;
+    this._roleService.getRoles(searchTerm, page, this.pageSize).subscribe({
+      next: (response) => {
+        this.roles = response.content;
+        this.totalRoles = response.totalElements;
+        this.isLoading = false;
       },
       error: (error) => {
         console.error(error);
-        this.isLoading.set(false);
+        this.isLoading = false;
       }
     });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadRoles(this.searchTerm(), this.pageIndex);
   }
 
   onSearch(event: Event): void {
@@ -100,9 +105,9 @@ export class RoleListComponent implements OnInit {
     this.deletingId.set(role.id);
     this._roleService.deleteRole(role.id).subscribe({
       next: () => {
-        this.roles.update((roles) => roles.filter((item) => item.id !== role.id));
         this._snackbar.success('Perfil excluído com sucesso.');
         this.deletingId.set(null);
+        this.loadRoles(this.searchTerm(), this.pageIndex);
       },
       error: (error) => {
         console.error(error);

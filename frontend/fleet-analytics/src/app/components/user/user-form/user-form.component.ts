@@ -37,6 +37,9 @@ export class UserFormComponent implements OnInit {
 
   readonly form = this._formBuilder.nonNullable.group({
     username: ['', Validators.required],
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    phone: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     roleId: ['', Validators.required]
@@ -47,9 +50,9 @@ export class UserFormComponent implements OnInit {
   isSaving = false;
 
   ngOnInit(): void {
-    this._roleService.getRoles().subscribe({
-      next: (roles) => {
-        this.roles = roles;
+    this._roleService.getRolesList().subscribe({
+      next: (response) => {
+        this.roles = response.content;
         this.isLoading = false;
       },
       error: (error) => {

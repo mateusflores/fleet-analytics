@@ -9,7 +9,9 @@ import { RoleListComponent } from './components/role/role-list/role-list.compone
 import { RoleFormComponent } from './components/role/role-form/role-form.component';
 import { UserListComponent } from './components/user/user-list/user-list.component';
 import { UserFormComponent } from './components/user/user-form/user-form.component';
+import { UserDetailsComponent } from './components/user/user-details/user-details.component';
 import { authGuard } from './guards/auth.guard';
+import { permissionGuard } from './guards/permission.guard';
 
 export const routes: Routes = [
   {
@@ -30,15 +32,18 @@ export const routes: Routes = [
       },
       {
         path: 'machines',
-        component: MachineListComponent
+        component: MachineListComponent,
+        canActivate: [permissionGuard('vehicles:view')]
       },
       {
         path: 'machines/details/:id',
-        component: MachineDetailsComponent
+        component: MachineDetailsComponent,
+        canActivate: [permissionGuard('vehicles:view')]
       },
       {
         path: 'machines/add',
-        component: AddMachineComponent
+        component: AddMachineComponent,
+        canActivate: [permissionGuard('vehicles:create')]
       },
       {
         path: 'roles',
@@ -54,11 +59,18 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        component: UserListComponent
+        component: UserListComponent,
+        canActivate: [permissionGuard('users:read')]
       },
       {
         path: 'users/add',
-        component: UserFormComponent
+        component: UserFormComponent,
+        canActivate: [permissionGuard('users:create')]
+      },
+      {
+        path: 'users/details/:username',
+        component: UserDetailsComponent,
+        canActivate: [permissionGuard('users:management')]
       },
       {
         path: 'profile',

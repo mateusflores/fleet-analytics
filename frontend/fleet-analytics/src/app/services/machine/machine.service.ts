@@ -3,10 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Machine } from '../../models/machine/machine.model';
 import { MachineTelemetry } from '../../models/machine/telemetry/machine-telemetry.model';
 import { delay, map, Observable, of, timer } from 'rxjs';
-import { webSocket } from 'rxjs/webSocket';
-import { MachineType } from '../../models/machine/machine-type.model';
-import { MachineStatus } from '../../models/machine/machine-status.model';
-import { PaginatedMachinesResponse } from '../../responses/paginated-machines.response';
+import { PaginatedResponse } from '../../responses/paginated-response.model';
 import { MachineTelemetrySeriesPoint } from '../../models/machine/telemetry/machine-telemetry-series-point.model';
 import { TelemetryMetric } from '../../models/machine/telemetry/machine-telemetry-metric.type';
 import { environment } from '../../../environments/environment';
@@ -25,8 +22,13 @@ export class MachineService {
   constructor() { }
   
 
-  public getMachines(search: string, page = 0, pageSize = 9): Observable<PaginatedMachinesResponse> {
-    return this._httpClient.get<PaginatedMachinesResponse>(`${this._vehiclesUrl}?search=${search}&page=${page}&size=${pageSize}`);
+  public getMachines(
+    field: keyof Machine = 'nickname',
+    term = '',
+    page = 0,
+    pageSize = 9
+  ): Observable<PaginatedResponse<Machine>> {
+    return this._httpClient.get<PaginatedResponse<Machine>>(`${this._vehiclesUrl}/search?${field}=${term}&page=${page}&size=${pageSize}`);
   }
 
   public addMachine(machine: Machine): Observable<Machine> {

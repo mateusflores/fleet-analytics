@@ -12,10 +12,13 @@ import { Machine } from '../../../models/machine/machine.model';
 import { MachineService } from '../../../services/machine/machine.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { MachineTypeLabelPipe } from '../../../shared/pipes/machine-type-label.pipe';
+import { MachineFuelTypeLabelPipe } from '../../../shared/pipes/machine-fuel-type-label.pipe';
 import { MachineType } from '../../../models/machine/machine-type.model';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { MachineTelemetry } from '../../../models/machine/telemetry/machine-telemetry.model';
 import { TelemetryChartComponent } from '../../../shared/components/telemetry-chart/telemetry-chart.component';
+import { AuthService } from '../../../services/auth/auth.service';
+import { MachineFuelType } from '../../../models/machine/mahcine-fuel-type.model';
 
 @Component({
   selector: 'app-machine-details',
@@ -30,6 +33,7 @@ import { TelemetryChartComponent } from '../../../shared/components/telemetry-ch
     MatSelectModule,
     MatCardModule,
     MachineTypeLabelPipe,
+    MachineFuelTypeLabelPipe,
     CardComponent,
     TelemetryChartComponent
   ],
@@ -43,8 +47,10 @@ export class MachineDetailsComponent implements OnInit {
   private readonly _router = inject(Router);
   private readonly _formBuilder = inject(FormBuilder);
   private readonly _snackbar = inject(SnackbarService);
+  readonly authService: AuthService = inject(AuthService);
 
   readonly machineTypes = Object.values(MachineType);
+  readonly machineFuelTypes = Object.values(MachineFuelType);
   readonly chartPeriods = [
     new Date(new Date().setHours(new Date().getHours() - 1)),
     new Date(new Date().setHours(new Date().getHours() - 24)),
@@ -73,9 +79,10 @@ export class MachineDetailsComponent implements OnInit {
     mileageKm: [0, [Validators.required, Validators.min(0)]],
     vehicleType: [MachineType.RIGID_TRUCK, Validators.required],
     maxLoadKg: [0, [Validators.required, Validators.min(0)]],
-    fuelType: ['', [Validators.required]],
+    fuelType: [MachineFuelType.GASOLINE, Validators.required],
     nickname: ['', [Validators.required]],
-    renavam: ['', [Validators.required]]
+    renavam: ['', [Validators.required]],
+    active: [true, Validators.required]
   });
 
   ngOnInit(): void {
@@ -100,7 +107,7 @@ export class MachineDetailsComponent implements OnInit {
   }
 
   startEdit(): void {
-    if (!this.machine) {
+    if (!this.machine || !this.authService.hasPermission('vehicles:update')) {
       return;
     }
     this.editForm.patchValue({
@@ -113,9 +120,10 @@ export class MachineDetailsComponent implements OnInit {
       mileageKm: this.machine.mileageKm,
       vehicleType: this.machine.vehicleType,
       maxLoadKg: this.machine.maxLoadKg,
-      fuelType: this.machine.fuelType ?? '',
+      fuelType: this.machine.fuelType,
       nickname: this.machine.nickname ?? '',
-      renavam: this.machine.renavam ?? ''
+      renavam: this.machine.renavam ?? '',
+      active: this.machine.active
     });
     this.isEditing = true;
   }
@@ -125,7 +133,7 @@ export class MachineDetailsComponent implements OnInit {
   }
 
   saveEdit(): void {
-    if (!this.machine) {
+    if (!this.machine || !this.authService.hasPermission('vehicles:update')) {
       return;
     }
     if (this.editForm.invalid) {

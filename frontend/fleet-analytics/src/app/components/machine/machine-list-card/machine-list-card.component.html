@@ -15,16 +15,24 @@
 
   <dl class="machine-meta">
     <div class="meta-row">
+      <dt>Placa</dt>
+      <dd>{{ machine.licensePlate }}</dd>
+    </div>
+    <div class="meta-row">
+      <dt>Marca</dt>
+      <dd>{{ machine.brand }}</dd>
+    </div>
+    <div class="meta-row">
+      <dt>Modelo</dt>
+      <dd>{{ machine.model }}</dd>
+    </div>
+    <div class="meta-row">
       <dt>Tipo</dt>
       <dd>{{ machine.vehicleType | machineTypeLabel }}</dd>
     </div>
     <div class="meta-row">
-      <dt>Ano</dt>
-      <dd>{{ machine.year }}</dd>
-    </div>
-    <div class="meta-row">
-      <dt>Kilometragem</dt>
-      <dd>{{ machine.mileageKm }} km</dd>
+      <dt>Modelo</dt>
+      <dd>{{ machine.renavam }}</dd>
     </div>
   </dl>
 </mat-card>

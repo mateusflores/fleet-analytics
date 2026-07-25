@@ -18,20 +18,20 @@
     />
   </mat-form-field>
 
-  @if (isLoading()) {
+  @if (isLoading) {
     <div class="loading-spinner">
       <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
     </div>
   }
   @else {
-    @if (filteredRoles().length === 0) {
+    @if (roles.length === 0) {
       <div class="no-results">
         <p>Nenhum perfil encontrado</p>
       </div>
     }
     @else {
       <section class="role-grid">
-        @for (role of filteredRoles(); track role.id) {
+        @for (role of roles; track role.id) {
           <app-role-list-card
             [role]="role"
             (edit)="onEdit($event)"
@@ -39,6 +39,15 @@
           ></app-role-list-card>
         }
       </section>
+
+      <mat-paginator
+        class="paginator"
+        [length]="totalRoles"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[9, 18, 27]"
+        (page)="onPageChange($event)"
+      ></mat-paginator>
     }
   }
 </section>

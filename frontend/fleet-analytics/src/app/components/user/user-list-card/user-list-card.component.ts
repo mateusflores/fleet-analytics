@@ -16,6 +16,11 @@ export class UserListCardComponent {
 
   readonly enable = output<User>();
   readonly disable = output<User>();
+  readonly details = output<User>();
+
+  onDetails(): void {
+    this.details.emit(this.user);
+  }
 
   onEnable(event: Event): void {
     event.stopPropagation();

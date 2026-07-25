@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { AuthService } from '../../services/auth/auth.service';
+import { SnackbarService } from '../../services/snackbar/snackbar.service';
 
 interface ProfileFields {
   fullName: string;
@@ -28,23 +30,8 @@ interface ProfileFields {
 export class ProfileComponent implements OnInit {
   private readonly _fb = inject(FormBuilder);
   private readonly _destroyRef = inject(DestroyRef);
-
-  /** Committed values shown in the header and restored on cancel */
-  savedProfile: ProfileFields = {
-    fullName: 'John Anderson',
-    email: 'john.anderson@company.com',
-    role: 'Fleet Manager',
-    company: 'Construction Corp'
-  };
-
-  isEditing = false;
-
-  readonly profileForm = this._fb.nonNullable.group({
-    fullName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    role: [''],
-    company: ['']
-  });
+  private readonly _snackbar = inject(SnackbarService);
+  private readonly _authService: AuthService = inject(AuthService);
 
   readonly passwordForm = this._fb.nonNullable.group({
     currentPassword: ['', Validators.required],
@@ -53,11 +40,6 @@ export class ProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.profileForm.patchValue(this.savedProfile);
-    this.profileForm.controls.role.disable({ emitEvent: false });
-    this.profileForm.controls.company.disable({ emitEvent: false });
-    this.setUserEditableFieldsDisabled(true);
-
     this.passwordForm.controls.newPassword.valueChanges
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe(() => {
@@ -65,46 +47,21 @@ export class ProfileComponent implements OnInit {
       });
   }
 
-  startEdit(): void {
-    this.setUserEditableFieldsDisabled(false);
-    this.isEditing = true;
-  }
-
-  cancel(): void {
-    this.profileForm.patchValue(this.savedProfile);
-    this.setUserEditableFieldsDisabled(true);
-    this.isEditing = false;
-  }
-
-  save(): void {
-    if (this.profileForm.invalid || this.profileForm.pending) {
-      this.profileForm.markAllAsTouched();
-      return;
-    }
-    const values = this.profileForm.getRawValue();
-    this.savedProfile = { ...values };
-    this.setUserEditableFieldsDisabled(true);
-    this.isEditing = false;
-  }
-
   updatePassword(): void {
-    if (this.passwordForm.invalid || this.passwordForm.pending) {
+    if (!this.passwordForm.invalid && !this.passwordForm.pending) {
       this.passwordForm.markAllAsTouched();
-      return;
-    }
-
-    this.passwordForm.reset();
-  }
-
-  private setUserEditableFieldsDisabled(disabled: boolean): void {
-    const opts = { emitEvent: false } as const;
-    if (disabled) {
-      this.profileForm.controls.fullName.disable(opts);
-      this.profileForm.controls.email.disable(opts);
-    } 
-    else {
-      this.profileForm.controls.fullName.enable(opts);
-      this.profileForm.controls.email.enable(opts);
+      console.log("passou aqui")
+      const patch = this.passwordForm.getRawValue();
+      console.log(patch)
+      this._authService.changePassword(patch).subscribe({
+        next: () => {
+          this._snackbar.success('Máquina atualizada com sucesso.');
+        },
+        error: (error) => {
+          console.error('Error saving machine:', error);
+          this._snackbar.error('Erro ao atualizar máquina. Tente novamente.');
+        }
+      });
     }
   }
 

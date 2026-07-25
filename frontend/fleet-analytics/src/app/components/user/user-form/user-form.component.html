@@ -16,6 +16,28 @@
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="field-row">
           <div class="field-group">
+            <label>Nome</label>
+            <mat-form-field appearance="outline">
+              <input matInput type="text" formControlName="firstName" placeholder="Ex: Joao" />
+              @if (fieldError('firstName'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="field-group">
+            <label>Sobrenome</label>
+            <mat-form-field appearance="outline">
+              <input matInput type="text" formControlName="lastName" placeholder="Ex: Silva" />
+              @if (fieldError('lastName'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
             <label>Nome de usuário</label>
             <mat-form-field appearance="outline">
               <input
@@ -48,15 +70,10 @@
 
         <div class="field-row">
           <div class="field-group">
-            <label>Senha</label>
+            <label>Telefone</label>
             <mat-form-field appearance="outline">
-              <input
-                matInput
-                type="password"
-                formControlName="password"
-                placeholder="Mínimo 6 caracteres"
-              />
-              @if (fieldError('password'); as msg) {
+              <input matInput type="tel" formControlName="phone" placeholder="Ex: (11) 99999-9999" />
+              @if (fieldError('phone'); as msg) {
                 <mat-error>{{ msg }}</mat-error>
               }
             </mat-form-field>
@@ -76,6 +93,21 @@
             </mat-form-field>
           </div>
         </div>
+
+        <div class="field-group">
+          <label>Senha</label>
+          <mat-form-field appearance="outline">
+            <input
+              matInput
+              type="password"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+            />
+            @if (fieldError('password'); as msg) {
+              <mat-error>{{ msg }}</mat-error>
+            }
+          </mat-form-field>
+        </div> 
 
         <div class="actions">
           <button mat-flat-button type="submit" class="primary-btn" [disabled]="isSaving">
