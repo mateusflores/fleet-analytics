@@ -1,6 +1,7 @@
 package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateUserRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.ResetPasswordRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UserSummary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,4 +19,6 @@ public interface UserService {
     UserSummary disableUser(UUID userId);
 
     UserSummary enableUser(UUID userId);
+
+    void resetOwnPassword(String username, ResetPasswordRequest request);
 }

@@ -1,6 +1,7 @@
 package com.unesp.fleetanalyticsapi.app.controllers;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateUserRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.ResetPasswordRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UserSummary;
 import com.unesp.fleetanalyticsapi.app.services.UserService;
 import jakarta.validation.Valid;
@@ -11,6 +12,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -55,5 +58,12 @@ public class UserController {
     public ResponseEntity<UserSummary> enableUser(@PathVariable UUID userId) {
         UserSummary summary = userService.enableUser(userId);
         return ResponseEntity.ok(summary);
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> resetOwnPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        userService.resetOwnPassword(auth.getName(), request);
+        return ResponseEntity.noContent().build();
     }
 }

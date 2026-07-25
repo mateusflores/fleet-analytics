@@ -1,6 +1,7 @@
 package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateUserRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.ResetPasswordRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UserSummary;
 import com.unesp.fleetanalyticsapi.model.entities.Role;
 import com.unesp.fleetanalyticsapi.model.entities.User;
@@ -64,6 +65,23 @@ public class UserServiceImpl implements UserService {
         user.setEnabled(true);
         user = userRepository.save(user);
         return toSummary(user);
+    }
+
+    @Override
+    public void resetOwnPassword(String username, ResetPasswordRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("New password and confirmation do not match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
     }
 
     @Override
