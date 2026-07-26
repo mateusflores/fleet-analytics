@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 
 @Configuration
-public class FleetFlywayConfig {
+public class FlywayConfiguration {
 
     @Bean
-    Flyway fleetFlyway(DataSource dataSource) {
+    Flyway runFlywayMigrations(DataSource dataSource) {
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")

@@ -19,6 +19,15 @@ spring:
   flyway:
     enabled: false
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    listener:
+      simple:
+        default-requeue-rejected: false
+
 logging:
   level:
     com.unesp.fleetanalyticsapi: DEBUG
@@ -30,3 +39,7 @@ app:
     secret: ${JWT_SECRET}
     access-token-expiration: 900000
     refresh-token-expiration: 604800000
+  messaging:
+    queue-position: fleet.telemetry.position
+    queue-telemetry: fleet.telemetry.telemetry
+    queue-event: fleet.telemetry.event
