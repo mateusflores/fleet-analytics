@@ -5,3 +5,6 @@ spring:
 mqtt:
   broker-url: ${BROKER_URL}
   client-id: ${CLIENT_ID}
+
+simulation:
+  interval-ms: 1000

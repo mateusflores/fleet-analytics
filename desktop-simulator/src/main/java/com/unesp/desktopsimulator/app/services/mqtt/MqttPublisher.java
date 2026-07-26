@@ -63,10 +63,9 @@ public class MqttPublisher {
     }
 
     private String resolveTopic(RawData data) {
-        String base = "fleet/" + data.getVehicleId();
-        if (data instanceof Position) return base + "/position";
-        if (data instanceof Telemetry) return base + "/telemetry";
-        if (data instanceof Message) return base + "/message";
+        if (data instanceof Position) return "telemetry/position";
+        if (data instanceof Telemetry) return "telemetry/telemetry";
+        if (data instanceof Message) return "telemetry/event";
         throw new IllegalArgumentException("Unknown data type: " + data.getClass());
     }
 
