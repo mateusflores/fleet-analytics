@@ -3,6 +3,7 @@ package com.unesp.fleetanalyticsapi.app.messaging;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.EventMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.PositionMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.TelemetryMessage;
+import com.unesp.fleetanalyticsapi.app.sse.TelemetryEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 public class TelemetryConsumer {
 
     private final JdbcTemplate jdbcTemplate;
+    private final TelemetryEventPublisher eventPublisher;
 
     @RabbitListener(queues = "${app.messaging.queue-position}")
     public void handlePosition(PositionMessage msg) {
@@ -32,6 +34,7 @@ public class TelemetryConsumer {
                 msg.heading(),
                 msg.accuracy()
         );
+        eventPublisher.publishPosition(msg);
     }
 
     @RabbitListener(queues = "${app.messaging.queue-telemetry}")
@@ -51,6 +54,7 @@ public class TelemetryConsumer {
                 msg.odometerKm(),
                 msg.batteryVoltage()
         );
+        eventPublisher.publishTelemetry(msg);
     }
 
     @RabbitListener(queues = "${app.messaging.queue-event}")
@@ -67,5 +71,6 @@ public class TelemetryConsumer {
                 msg.severity(),
                 msg.message()
         );
+        eventPublisher.publishEvent(msg);
     }
 }

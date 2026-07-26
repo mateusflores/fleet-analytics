@@ -31,6 +31,8 @@ permissions:
     description: "Update roles and permissions"
   - name: "roles:delete"
     description: "Delete roles"
+  - name: "telemetry:read"
+    description: "Read real-time telemetry data"
 
 roles:
   - name: "Admin"
@@ -41,11 +43,13 @@ roles:
       - "drivers:view"
       - "vehicles:view"
       - "travel:read"
+      - "telemetry:read"
   - name: "Driver"
     permissions:
       - "travel:start"
       - "travel:read"
       - "vehicles:view"
+      - "telemetry:read"
 
 admin:
   username: "admin"
