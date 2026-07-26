@@ -6,6 +6,9 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        default_schema: fleet
 
   datasource:
     url: ${DATABASE_URL}
@@ -14,10 +17,7 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   flyway:
-    enabled: true
-    baseline-on-migrate: true
-    validate-on-migrate: true
-    out-of-order: false
+    enabled: false
 
 logging:
   level:
