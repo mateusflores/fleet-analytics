@@ -19,8 +19,8 @@ export class RoleService {
     return this._httpClient.get<PaginatedResponse<Role>>(`${this._rolesUrl}/search?name=${name}&page=${page}&size=${pageSize}`);
   }
 
-  getRolesList(): Observable<PaginatedResponse<Role>> {
-    return this._httpClient.get<PaginatedResponse<Role>>(`${this._rolesUrl}`);
+  getRolesList(): Observable<Role[]> {
+    return this._httpClient.get<Role[]>(`${this._rolesUrl}`);
   }
 
   getRoleById(id: string): Observable<Role> {

@@ -52,7 +52,7 @@ export class UserFormComponent implements OnInit {
   ngOnInit(): void {
     this._roleService.getRolesList().subscribe({
       next: (response) => {
-        this.roles = response.content;
+        this.roles = response;
         this.isLoading = false;
       },
       error: (error) => {
