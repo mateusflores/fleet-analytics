@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -23,12 +24,14 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<VehicleSummary> findAll(Pageable pageable) {
         return vehicleRepository.findAll(pageable)
                 .map(this::toSummary);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public VehicleSummary findById(UUID id) {
         return vehicleRepository.findById(id)
                 .map(this::toSummary)
@@ -36,6 +39,7 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    @Transactional
     public VehicleSummary create(CreateVehicleRequest request) {
         Vehicle vehicle = Vehicle.builder()
                 .serialNumber(request.serialNumber())
@@ -58,6 +62,7 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    @Transactional
     public VehicleSummary update(UUID id, UpdateVehicleRequest request) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + id));
@@ -82,6 +87,7 @@ public class VehicleServiceImpl implements VehicleService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public Page<VehicleSummary> search(String serialNumber, String licensePlate, String brand,
                                         String model, Integer year, String color, String nickname,
                                         VehicleType vehicleType, FuelType fuelType, String renavam,

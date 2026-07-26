@@ -2,6 +2,7 @@ package com.unesp.fleetanalyticsapi.model.repositories;
 
 import com.unesp.fleetanalyticsapi.model.entities.crud.Trip;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface TripRepository extends JpaRepository<Trip, UUID> {
+public interface TripRepository extends JpaRepository<Trip, UUID>, JpaSpecificationExecutor<Trip> {
 
     @Query("""
             SELECT t
@@ -21,6 +22,15 @@ public interface TripRepository extends JpaRepository<Trip, UUID> {
             WHERE v.id = :vehicleId AND t.endTime IS NULL
             """)
     Optional<Trip> findOngoingTripByVehicle(@Param("vehicleId") UUID vehicleId);
+
+    @Query("""
+            SELECT t
+            FROM Trip t
+            LEFT JOIN FETCH t.vehicle
+            LEFT JOIN FETCH t.driver d
+            WHERE d.id = :driverId AND t.endTime IS NULL
+            """)
+    Optional<Trip> findOngoingTripByDriver(@Param("driverId") UUID driverId);
 
     boolean existsByVehicleIdAndEndTimeIsNull(UUID vehicleId);
 

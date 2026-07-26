@@ -8,6 +8,7 @@ import com.unesp.fleetanalyticsapi.model.entities.crud.Vehicle;
 import com.unesp.fleetanalyticsapi.model.repositories.TripRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.specifications.TripSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -106,6 +108,30 @@ public class TripServiceImpl implements TripService {
                 .map(this::toSummary)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No active trip found for vehicle: " + vehicleId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TripSummary findActiveByDriver(UUID driverId) {
+        userRepository.findById(driverId)
+                .orElseThrow(() -> new EntityNotFoundException("Driver not found: " + driverId));
+
+        return tripRepository.findOngoingTripByDriver(driverId)
+                .map(this::toSummary)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No active trip found for driver: " + driverId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TripSummary> search(UUID vehicleId, UUID driverId,
+                                     Instant startAt, Instant endAt,
+                                     Boolean ongoingTrip, Pageable pageable) {
+        return tripRepository.findAll(
+                        TripSpecification.filter(vehicleId, driverId,
+                                startAt, endAt, ongoingTrip),
+                        pageable)
+                .map(this::toSummary);
     }
 
     private boolean isAdminUser(UUID userId) {

@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @RestController
@@ -48,6 +49,20 @@ public class TripController {
         return ResponseEntity.ok(tripService.findAll(pageable));
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("hasAuthority('travel:read')")
+    public ResponseEntity<Page<TripSummary>> search(
+            @RequestParam(required = false) UUID vehicleId,
+            @RequestParam(required = false) UUID driverId,
+            @RequestParam(required = false) Instant startAt,
+            @RequestParam(required = false) Instant endAt,
+            @RequestParam(required = false) Boolean ongoingTrip,
+            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(tripService.search(
+                vehicleId, driverId, startAt, endAt, ongoingTrip, pageable));
+    }
+
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('travel:read')")
     public ResponseEntity<TripSummary> findById(@PathVariable UUID id) {
@@ -59,4 +74,11 @@ public class TripController {
     public ResponseEntity<TripSummary> findActiveByVehicle(@PathVariable UUID vehicleId) {
         return ResponseEntity.ok(tripService.findActiveByVehicle(vehicleId));
     }
+
+    @GetMapping("/driver/{driverId}/active")
+    @PreAuthorize("hasAuthority('travel:read')")
+    public ResponseEntity<TripSummary> findActiveByDriver(@PathVariable UUID driverId) {
+        return ResponseEntity.ok(tripService.findActiveByDriver(driverId));
+    }
+
 }

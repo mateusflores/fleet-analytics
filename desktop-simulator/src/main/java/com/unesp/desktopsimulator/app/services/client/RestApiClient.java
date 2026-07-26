@@ -12,7 +12,6 @@ import com.unesp.desktopsimulator.model.Driver;
 import com.unesp.desktopsimulator.model.Vehicle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
@@ -22,9 +21,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class VehicleApiClient {
+public class RestApiClient {
 
-    private static final Logger log = LoggerFactory.getLogger(VehicleApiClient.class);
+    private static final Logger log = LoggerFactory.getLogger(RestApiClient.class);
     private static final int PAGE_SIZE = 1000;
 
     private final RestClient restClient;
@@ -33,7 +32,7 @@ public class VehicleApiClient {
     private String accessToken;
     private String refreshToken;
 
-    public VehicleApiClient(RestClient restClient, ObjectMapper mapper) {
+    public RestApiClient(RestClient restClient, ObjectMapper mapper) {
         this.restClient = restClient;
         this.mapper = mapper;
     }
