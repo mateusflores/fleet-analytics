@@ -32,78 +32,30 @@ public class TelemetrySseController {
     @PreAuthorize("hasAuthority('telemetry:read')")
     public SseEmitter streamPositions(
             @RequestParam(required = false) UUID vehicleId,
-            @RequestParam(required = false) UUID tripId) {
+            @RequestParam(required = false) UUID tripId,
+            @RequestParam(defaultValue = "5m") String duration) {
 
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
-
-        List<PositionMessage> recent = loadRecentPositions(vehicleId, tripId);
-        for (PositionMessage msg : recent) {
-            try {
-                emitter.send(SseEmitter.event().data(msg));
-            } catch (IOException e) {
-                emitter.completeWithError(e);
-                return emitter;
-            }
-        }
-
-        Disposable subscription = publisher.positionFlux()
-                .filter(msg -> vehicleId == null || vehicleId.equals(msg.vehicleId()))
-                .filter(msg -> tripId == null || tripId.equals(msg.tripId()))
-                .subscribe(
-                        msg -> {
-                            try {
-                                emitter.send(SseEmitter.event().data(msg));
-                            } catch (IOException ignored) {
-                            }
-                        },
-                        emitter::completeWithError,
-                        emitter::complete
-                );
-
-        emitter.onCompletion(subscription::dispose);
-        emitter.onError(err -> subscription.dispose());
-        emitter.onTimeout(subscription::dispose);
-
-        return emitter;
+        DurationConfig cfg = DurationConfig.from(duration);
+        List<PositionMessage> snapshot = loadRecentPositions(vehicleId, tripId, cfg);
+        return wireSse(snapshot,
+                publisher.positionFlux()
+                        .filter(msg -> vehicleId == null || vehicleId.equals(msg.vehicleId()))
+                        .filter(msg -> tripId == null || tripId.equals(msg.tripId())));
     }
 
     @GetMapping(value = "/telemetry/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("hasAuthority('telemetry:read')")
     public SseEmitter streamTelemetry(
             @RequestParam(required = false) UUID vehicleId,
-            @RequestParam(required = false) UUID tripId) {
+            @RequestParam(required = false) UUID tripId,
+            @RequestParam(defaultValue = "5m") String duration) {
 
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
-
-        List<TelemetryMessage> recent = loadRecentTelemetry(vehicleId, tripId);
-        for (TelemetryMessage msg : recent) {
-            try {
-                emitter.send(SseEmitter.event().data(msg));
-            } catch (IOException e) {
-                emitter.completeWithError(e);
-                return emitter;
-            }
-        }
-
-        Disposable subscription = publisher.telemetryFlux()
-                .filter(msg -> vehicleId == null || vehicleId.equals(msg.vehicleId()))
-                .filter(msg -> tripId == null || tripId.equals(msg.tripId()))
-                .subscribe(
-                        msg -> {
-                            try {
-                                emitter.send(SseEmitter.event().data(msg));
-                            } catch (IOException ignored) {
-                            }
-                        },
-                        emitter::completeWithError,
-                        emitter::complete
-                );
-
-        emitter.onCompletion(subscription::dispose);
-        emitter.onError(err -> subscription.dispose());
-        emitter.onTimeout(subscription::dispose);
-
-        return emitter;
+        DurationConfig cfg = DurationConfig.from(duration);
+        List<TelemetryMessage> snapshot = loadRecentTelemetry(vehicleId, tripId, cfg);
+        return wireSse(snapshot,
+                publisher.telemetryFlux()
+                        .filter(msg -> vehicleId == null || vehicleId.equals(msg.vehicleId()))
+                        .filter(msg -> tripId == null || tripId.equals(msg.tripId())));
     }
 
     @GetMapping(value = "/events/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -112,12 +64,24 @@ public class TelemetrySseController {
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID tripId,
             @RequestParam(required = false) String eventType,
-            @RequestParam(required = false) String severity) {
+            @RequestParam(required = false) String severity,
+            @RequestParam(defaultValue = "5m") String duration) {
 
+        DurationConfig cfg = DurationConfig.from(duration);
+        List<EventMessage> snapshot = loadRecentEvents(vehicleId, tripId,
+                eventType, severity, cfg);
+        return wireSse(snapshot,
+                publisher.eventFlux()
+                        .filter(msg -> vehicleId == null || vehicleId.equals(msg.vehicleId()))
+                        .filter(msg -> tripId == null || tripId.equals(msg.tripId()))
+                        .filter(msg -> eventType == null || eventType.equals(msg.eventType()))
+                        .filter(msg -> severity == null || severity.equals(msg.severity())));
+    }
+
+    private <T> SseEmitter wireSse(List<T> snapshot, reactor.core.publisher.Flux<T> liveFlux) {
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
 
-        List<EventMessage> recent = loadRecentEvents(vehicleId, tripId, eventType, severity);
-        for (EventMessage msg : recent) {
+        for (T msg : snapshot) {
             try {
                 emitter.send(SseEmitter.event().data(msg));
             } catch (IOException e) {
@@ -126,30 +90,26 @@ public class TelemetrySseController {
             }
         }
 
-        Disposable subscription = publisher.eventFlux()
-                .filter(msg -> vehicleId == null || vehicleId.equals(msg.vehicleId()))
-                .filter(msg -> tripId == null || tripId.equals(msg.tripId()))
-                .filter(msg -> eventType == null || eventType.equals(msg.eventType()))
-                .filter(msg -> severity == null || severity.equals(msg.severity()))
-                .subscribe(
-                        msg -> {
-                            try {
-                                emitter.send(SseEmitter.event().data(msg));
-                            } catch (IOException ignored) {
-                            }
-                        },
-                        emitter::completeWithError,
-                        emitter::complete
-                );
+        Disposable sub = liveFlux.subscribe(
+                msg -> {
+                    try {
+                        emitter.send(SseEmitter.event().data(msg));
+                    } catch (IOException ignored) {
+                    }
+                },
+                emitter::completeWithError,
+                emitter::complete
+        );
 
-        emitter.onCompletion(subscription::dispose);
-        emitter.onError(err -> subscription.dispose());
-        emitter.onTimeout(subscription::dispose);
+        emitter.onCompletion(sub::dispose);
+        emitter.onError(err -> sub.dispose());
+        emitter.onTimeout(sub::dispose);
 
         return emitter;
     }
 
-    private List<PositionMessage> loadRecentPositions(UUID vehicleId, UUID tripId) {
+    private List<PositionMessage> loadRecentPositions(UUID vehicleId, UUID tripId,
+                                                       DurationConfig cfg) {
         return jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, latitude, longitude, speed_kmh, heading, accuracy
                 FROM telemetry.vehicle_positions
@@ -157,7 +117,7 @@ public class TelemetrySseController {
                   AND (trip_id = ?::uuid OR ? IS NULL)
                   AND time > ?::timestamptz
                 ORDER BY time ASC
-                LIMIT 500
+                LIMIT ?
                 """,
                 (rs, rowNum) -> new PositionMessage(
                         rs.getObject("vehicle_id", UUID.class),
@@ -171,10 +131,12 @@ public class TelemetrySseController {
                 ),
                 vehicleId, vehicleId,
                 tripId, tripId,
-                Instant.now().minusSeconds(300));
+                Instant.now().minusSeconds(cfg.seconds()),
+                cfg.limit());
     }
 
-    private List<TelemetryMessage> loadRecentTelemetry(UUID vehicleId, UUID tripId) {
+    private List<TelemetryMessage> loadRecentTelemetry(UUID vehicleId, UUID tripId,
+                                                        DurationConfig cfg) {
         return jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,
                        engine_temp_c, odometer_km, battery_voltage
@@ -183,7 +145,7 @@ public class TelemetrySseController {
                   AND (trip_id = ?::uuid OR ? IS NULL)
                   AND time > ?::timestamptz
                 ORDER BY time ASC
-                LIMIT 500
+                LIMIT ?
                 """,
                 (rs, rowNum) -> new TelemetryMessage(
                         rs.getObject("vehicle_id", UUID.class),
@@ -197,11 +159,13 @@ public class TelemetrySseController {
                 ),
                 vehicleId, vehicleId,
                 tripId, tripId,
-                Instant.now().minusSeconds(300));
+                Instant.now().minusSeconds(cfg.seconds()),
+                cfg.limit());
     }
 
     private List<EventMessage> loadRecentEvents(UUID vehicleId, UUID tripId,
-                                                 String eventType, String severity) {
+                                                 String eventType, String severity,
+                                                 DurationConfig cfg) {
         return jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, event_type, severity, message
                 FROM telemetry.events
@@ -211,7 +175,7 @@ public class TelemetrySseController {
                   AND (severity = ? OR ? IS NULL)
                   AND time > ?::timestamptz
                 ORDER BY time ASC
-                LIMIT 500
+                LIMIT ?
                 """,
                 (rs, rowNum) -> new EventMessage(
                         rs.getObject("vehicle_id", UUID.class),
@@ -225,6 +189,18 @@ public class TelemetrySseController {
                 tripId, tripId,
                 eventType, eventType,
                 severity, severity,
-                Instant.now().minusSeconds(300));
+                Instant.now().minusSeconds(cfg.seconds()),
+                cfg.limit());
+    }
+
+    private record DurationConfig(long seconds, int limit) {
+        static DurationConfig from(String val) {
+            return switch (val) {
+                case "1h" -> new DurationConfig(3600, 5000);
+                case "7d" -> new DurationConfig(604800, 10000);
+                case "30d" -> new DurationConfig(2592000, 20000);
+                default -> new DurationConfig(300, 500);
+            };
+        }
     }
 }
