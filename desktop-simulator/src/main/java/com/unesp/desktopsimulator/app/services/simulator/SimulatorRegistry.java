@@ -46,9 +46,9 @@ public class SimulatorRegistry {
         this.mqttPublisher = mqttPublisher;
     }
 
-    public SimulationState start(Vehicle vehicle, Driver driver) {
+    public SimulationState start(Vehicle vehicle, Driver driver, UUID tripId) {
         SimulationState state = new SimulationState(vehicle, driver);
-        state.setTripId(UUID.randomUUID());
+        state.setTripId(tripId);
 
         VehicleSimulator simulator = new VehicleSimulator(
                 state, positionGenerator, telemetryGenerator,

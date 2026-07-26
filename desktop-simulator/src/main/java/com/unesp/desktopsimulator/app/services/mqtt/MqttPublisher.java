@@ -1,5 +1,6 @@
 package com.unesp.desktopsimulator.app.services.mqtt;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import tools.jackson.databind.ObjectMapper;
 import com.unesp.desktopsimulator.model.telemetry.Message;
 import com.unesp.desktopsimulator.model.telemetry.Position;
@@ -38,10 +39,12 @@ public class MqttPublisher {
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
             options.setConnectionTimeout(10);
+            options.setUserName("admin");
+            options.setPassword("admin".toCharArray());
             mqttClient.connect(options);
             log.info("Connected to MQTT broker at {}", mqttClient.getServerURI());
         } catch (MqttException e) {
-            log.warn("Could not connect to MQTT broker: {}", e.getMessage());
+            log.error("Could not connect to MQTT broker: {}", e.getMessage());
         }
     }
 

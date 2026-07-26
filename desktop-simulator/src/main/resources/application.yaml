@@ -1,10 +1,15 @@
 spring:
   application:
     name: desktop-simulator
+  main:
+    web-application-type: none
+
+api:
+  base-url: ${API_BASE_URL:http://localhost:8080}
 
 mqtt:
-  broker-url: ${BROKER_URL}
-  client-id: ${CLIENT_ID}
+  broker-url: tcp://localhost:1883
+  client-id: desktop-simulator
 
 simulation:
   interval-ms: 1000
