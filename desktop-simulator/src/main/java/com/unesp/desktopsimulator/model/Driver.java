@@ -5,20 +5,27 @@ import java.util.UUID;
 public class Driver {
 
     private final UUID id;
-    private final String name;
+    private final String firstName;
+    private final String lastName;
     private boolean isAvailable = true;
 
     private Driver(Builder builder) {
-        name = builder.name;
         id = builder.id;
+        firstName = builder.firstName;
+        lastName = builder.lastName;
+        setAvailable(builder.isAvailable);
     }
 
     public UUID getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
     }
 
     public boolean getAvailable() {
@@ -29,24 +36,21 @@ public class Driver {
         isAvailable = available;
     }
 
+
     public static final class Builder {
-        private String name;
-        private UUID id;
+        private final UUID id;
+        private final String firstName;
+        private final String lastName;
+        private boolean isAvailable;
 
-        private Builder() {
+        public Builder(UUID id, String firstName, String lastName) {
+            this.id = id;
+            this.firstName = firstName;
+            this.lastName = lastName;
         }
 
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public Builder withName(String val) {
-            name = val;
-            return this;
-        }
-
-        public Builder withId(UUID val) {
-            id = val;
+        public Builder isAvailable(boolean val) {
+            isAvailable = val;
             return this;
         }
 

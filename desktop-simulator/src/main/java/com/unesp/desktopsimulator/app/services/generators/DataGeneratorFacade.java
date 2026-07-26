@@ -1,4 +1,4 @@
-package com.unesp.desktopsimulator.app.services;
+package com.unesp.desktopsimulator.app.services.generators;
 
 
 import org.springframework.beans.factory.annotation.Autowired;

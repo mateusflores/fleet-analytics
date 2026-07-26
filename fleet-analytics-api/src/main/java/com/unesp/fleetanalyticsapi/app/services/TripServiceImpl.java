@@ -2,9 +2,9 @@ package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateTripRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.TripSummary;
-import com.unesp.fleetanalyticsapi.model.entities.Trip;
-import com.unesp.fleetanalyticsapi.model.entities.User;
-import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Trip;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Vehicle;
 import com.unesp.fleetanalyticsapi.model.repositories.TripRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
@@ -29,7 +29,7 @@ public class TripServiceImpl implements TripService {
     private final VehicleRepository vehicleRepository;
 
     @Override
-    @Transactional
+    @Transactional      
     public TripSummary startTrip(CreateTripRequest request) {
         User driver = userRepository.findById(request.driverId())
                 .orElseThrow(() -> new EntityNotFoundException("Driver not found: " + request.driverId()));
@@ -40,6 +40,11 @@ public class TripServiceImpl implements TripService {
         if (tripRepository.existsByVehicleIdAndEndTimeIsNull(request.vehicleId())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Vehicle already has an active trip");
+        }
+
+        if (tripRepository.existsByDriverIdAndEndTimeIsNull(request.driverId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Driver already has an active trip");
         }
 
         Trip trip = Trip.builder()
@@ -77,6 +82,7 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TripSummary findById(UUID id) {
         return tripRepository.findById(id)
                 .map(this::toSummary)
@@ -84,21 +90,27 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<TripSummary> findAll(Pageable pageable) {
         return tripRepository.findAll(pageable)
                 .map(this::toSummary);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TripSummary findActiveByVehicle(UUID vehicleId) {
-        return tripRepository.findByVehicleIdAndEndTimeIsNull(vehicleId)
+        vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + vehicleId));
+
+        return tripRepository.findOngoingTripByVehicle(vehicleId)
                 .map(this::toSummary)
-                .orElseThrow(() -> new EntityNotFoundException("No active trip for vehicle: " + vehicleId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No active trip found for vehicle: " + vehicleId));
     }
 
     private boolean isAdminUser(UUID userId) {
         return userRepository.findById(userId)
-                .map(user -> "Admin".equals(user.getRole().getName()))
+                .map(user -> user.getRole() != null && "Admin".equals(user.getRole().getName()))
                 .orElse(false);
     }
 

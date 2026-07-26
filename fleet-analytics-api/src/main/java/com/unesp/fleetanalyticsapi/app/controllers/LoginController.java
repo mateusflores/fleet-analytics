@@ -2,6 +2,7 @@ package com.unesp.fleetanalyticsapi.app.controllers;
 
 import com.unesp.fleetanalyticsapi.app.dtos.LoginRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.LoginResponse;
+import com.unesp.fleetanalyticsapi.app.dtos.LogoutRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.RefreshTokenRequest;
 import com.unesp.fleetanalyticsapi.app.services.LoginService;
 import jakarta.validation.Valid;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,5 +29,15 @@ public class LoginController {
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(loginService.refreshToken(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody LogoutRequest request
+    ) {
+        String accessToken = authHeader.substring(7);
+        loginService.logout(accessToken, request);
+        return ResponseEntity.noContent().build();
     }
 }

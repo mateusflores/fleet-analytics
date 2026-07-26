@@ -3,14 +3,18 @@ package com.unesp.fleetanalyticsapi.app.services;
 import com.unesp.fleetanalyticsapi.app.dtos.CreateRoleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.PermissionSummary;
 import com.unesp.fleetanalyticsapi.app.dtos.RoleSummary;
-import com.unesp.fleetanalyticsapi.model.entities.Permission;
-import com.unesp.fleetanalyticsapi.model.entities.Role;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Permission;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
 import com.unesp.fleetanalyticsapi.model.repositories.PermissionRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.specifications.RoleSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,9 +43,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleSummary create(CreateRoleRequest request) {
-        Set<Permission> permissions = permissionRepository.findAllById(request.permissionIds())
-                .stream()
-                .collect(Collectors.toSet());
+        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
 
         if (permissions.size() != request.permissionIds().size()) {
             throw new IllegalArgumentException("One or more permission IDs are invalid");
@@ -61,9 +63,7 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Role not found: " + id));
 
-        Set<Permission> permissions = permissionRepository.findAllById(request.permissionIds())
-                .stream()
-                .collect(Collectors.toSet());
+        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
 
         if (permissions.size() != request.permissionIds().size()) {
             throw new IllegalArgumentException("One or more permission IDs are invalid");
@@ -74,6 +74,12 @@ public class RoleServiceImpl implements RoleService {
 
         role = roleRepository.save(role);
         return toSummary(role);
+    }
+
+    @Override
+    public Page<RoleSummary> search(String name, Pageable pageable) {
+        return roleRepository.findAll(RoleSpecification.nameLike(name), pageable)
+                .map(this::toSummary);
     }
 
     @Override

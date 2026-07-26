@@ -1,8 +1,8 @@
 package com.unesp.fleetanalyticsapi.infra.config;
 
-import com.unesp.fleetanalyticsapi.model.entities.Permission;
-import com.unesp.fleetanalyticsapi.model.entities.Role;
-import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Permission;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import com.unesp.fleetanalyticsapi.model.repositories.PermissionRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;

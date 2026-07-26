@@ -1,5 +1,6 @@
-package com.unesp.fleetanalyticsapi.model.entities;
+package com.unesp.fleetanalyticsapi.model.entities.crud;
 
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -49,8 +50,9 @@ public class Vehicle {
     @Column(name = "max_load_kg")
     private BigDecimal maxLoadKg;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "fuel_type")
-    private String fuelType;
+    private FuelType fuelType;
 
     private String nickname;
 
@@ -66,4 +68,11 @@ public class Vehicle {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
+
+    @Override
+    public String toString() {
+        return nickname != null && !nickname.isBlank()
+                ? nickname
+                : brand + " " + licensePlate;
+    }
 }

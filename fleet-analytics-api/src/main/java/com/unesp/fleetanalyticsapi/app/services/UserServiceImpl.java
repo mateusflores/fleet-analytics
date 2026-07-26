@@ -1,11 +1,14 @@
 package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateUserRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.ResetPasswordRequest;
+import com.unesp.fleetanalyticsapi.app.dtos.UpdateUserRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UserSummary;
-import com.unesp.fleetanalyticsapi.model.entities.Role;
-import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.specifications.UserSpecification;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,9 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setEnabled(true);
         user.setRole(role);
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setPhone(request.phone());
 
         user = userRepository.save(user);
         return toSummary(user);
@@ -58,12 +64,38 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Page<UserSummary> searchUsers(String firstName, String lastName, String email,
+                                         String username, String roleName, Pageable pageable) {
+        return userRepository.findAll(
+                        UserSpecification.filter(firstName, lastName, email, username, roleName),
+                        pageable)
+                .map(this::toSummary);
+    }
+
+    @Override
     public UserSummary enableUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
         user.setEnabled(true);
         user = userRepository.save(user);
         return toSummary(user);
+    }
+
+    @Override
+    public void resetOwnPassword(String username, ResetPasswordRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("New password and confirmation do not match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
     }
 
     @Override
@@ -75,10 +107,36 @@ public class UserServiceImpl implements UserService {
         return toSummary(user);
     }
 
+    @Override
+    public UserSummary updateUser(UUID userId, UpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+
+        if (request.firstName() != null) {
+            user.setFirstName(request.firstName());
+        }
+        if (request.lastName() != null) {
+            user.setLastName(request.lastName());
+        }
+        if (request.phone() != null) {
+            user.setPhone(request.phone());
+        }
+        if (request.email() != null) {
+            user.setEmail(request.email());
+        }
+
+        user = userRepository.save(user);
+        return toSummary(user);
+    }
+
     private UserSummary toSummary(User user) {
         return new UserSummary(
+                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhone(),
                 user.getEnabled(),
                 user.getRole().getName()
         );

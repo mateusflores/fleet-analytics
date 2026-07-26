@@ -1,5 +1,6 @@
 package com.unesp.fleetanalyticsapi.app.dtos;
 
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import jakarta.validation.constraints.PositiveOrZero;
 
@@ -15,8 +16,9 @@ public record UpdateVehicleRequest(
         @PositiveOrZero BigDecimal mileageKm,
         VehicleType vehicleType,
         @PositiveOrZero BigDecimal maxLoadKg,
-        String fuelType,
+        FuelType fuelType,
         String nickname,
-        String renavam
+        String renavam,
+        boolean active
 ) {
 }

@@ -1,10 +1,12 @@
-package com.unesp.fleetanalyticsapi.model.entities;
+package com.unesp.fleetanalyticsapi.model.entities.crud;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.util.UUID;
 
@@ -14,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Permission {
+public class Permission implements GrantedAuthority {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,4 +26,9 @@ public class Permission {
     private String name;
 
     private String description;
+
+    @Override
+    public @Nullable String getAuthority() {
+        return name;
+    }
 }

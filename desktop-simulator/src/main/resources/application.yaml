@@ -1,3 +1,7 @@
 spring:
   application:
     name: desktop-simulator
+
+mqtt:
+  broker-url: ${BROKER_URL}
+  client-id: ${CLIENT_ID}

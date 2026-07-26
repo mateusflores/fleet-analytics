@@ -1,4 +1,4 @@
-package com.unesp.desktopsimulator.app.services;
+package com.unesp.desktopsimulator.app.services.generators;
 
 import com.unesp.desktopsimulator.model.telemetry.Telemetry;
 import org.springframework.stereotype.Service;

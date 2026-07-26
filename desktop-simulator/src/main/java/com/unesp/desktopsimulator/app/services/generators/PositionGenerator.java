@@ -1,4 +1,4 @@
-package com.unesp.desktopsimulator.app.services;
+package com.unesp.desktopsimulator.app.services.generators;
 
 import com.unesp.desktopsimulator.model.telemetry.Position;
 import com.unesp.desktopsimulator.model.telemetry.Telemetry;

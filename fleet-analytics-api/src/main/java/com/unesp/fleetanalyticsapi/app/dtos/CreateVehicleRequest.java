@@ -1,5 +1,6 @@
 package com.unesp.fleetanalyticsapi.app.dtos;
 
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,7 +18,7 @@ public record CreateVehicleRequest(
         @PositiveOrZero BigDecimal mileageKm,
         @NotNull VehicleType vehicleType,
         @PositiveOrZero BigDecimal maxLoadKg,
-        String fuelType,
+        FuelType fuelType,
         String nickname,
         String renavam
 ) {

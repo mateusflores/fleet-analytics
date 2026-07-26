@@ -3,6 +3,8 @@ package com.unesp.fleetanalyticsapi.app.services;
 import com.unesp.fleetanalyticsapi.app.dtos.CreateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UpdateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.VehicleSummary;
+import com.unesp.fleetanalyticsapi.model.enums.FuelType;
+import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,5 +20,8 @@ public interface VehicleService {
 
     VehicleSummary update(UUID id, UpdateVehicleRequest request);
 
-    void deactivate(UUID id);
+    Page<VehicleSummary> search(String serialNumber, String licensePlate, String brand,
+                                String model, Integer year, String color, String nickname,
+                                VehicleType vehicleType, FuelType fuelType, String renavam,
+                                Pageable pageable);
 }

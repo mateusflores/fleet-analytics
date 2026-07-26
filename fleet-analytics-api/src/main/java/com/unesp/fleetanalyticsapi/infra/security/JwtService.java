@@ -1,17 +1,21 @@
 package com.unesp.fleetanalyticsapi.infra.security;
 
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -31,26 +35,50 @@ public class JwtService {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public String generateAccessToken(UserDetails userDetails) {
-        return buildToken(userDetails, accessTokenExpiration);
+    public String generateAccessToken(User user) {
+        return buildAccessToken(user);
     }
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(userDetails, refreshTokenExpiration);
+    public String generateRefreshToken(String username) {
+        return buildRefreshToken(username);
     }
 
-    private String buildToken(UserDetails userDetails, long expirationMillis) {
+    private String buildAccessToken(User user) {
         Instant now = Instant.now();
+
+        Set<String> authorities = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
         return Jwts.builder()
-                .subject(userDetails.getUsername())
+                .id(UUID.randomUUID().toString())
+                .subject(user.getUsername())
+                .claim("userId", user.getId())
+                .claim("authorities", authorities)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(expirationMillis)))
+                .expiration(Date.from(now.plusMillis(accessTokenExpiration)))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    private String buildRefreshToken(String username) {
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(username)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(refreshTokenExpiration)))
                 .signWith(signingKey)
                 .compact();
     }
 
     public String extractUsername(String token) {
         return extractClaims(token).getSubject();
+    }
+
+    public String extractJti(String token) {
+        return extractClaims(token).getId();
     }
 
     public Instant extractExpiration(String token) {
