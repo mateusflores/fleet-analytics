@@ -28,7 +28,7 @@ public class TelemetrySseController {
     private final TelemetryEventPublisher publisher;
     private final JdbcTemplate jdbcTemplate;
 
-    @GetMapping(value = "/positions/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/vehicle-positions/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("hasAuthority('telemetry:read')")
     public SseEmitter streamPositions(
             @RequestParam(required = false) UUID vehicleId,
@@ -43,7 +43,7 @@ public class TelemetrySseController {
                         .filter(msg -> tripId == null || tripId.equals(msg.tripId())));
     }
 
-    @GetMapping(value = "/telemetry/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/vehicle-data/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("hasAuthority('telemetry:read')")
     public SseEmitter streamTelemetry(
             @RequestParam(required = false) UUID vehicleId,

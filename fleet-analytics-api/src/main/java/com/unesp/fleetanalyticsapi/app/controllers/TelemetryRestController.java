@@ -27,7 +27,7 @@ public class TelemetryRestController {
 
     private final JdbcTemplate jdbcTemplate;
 
-    @GetMapping("/positions")
+    @GetMapping("/vehicle-positions")
     @PreAuthorize("hasAuthority('telemetry:read')")
     public ResponseEntity<Page<PositionMessage>> findPositions(
             @RequestParam Instant from,
@@ -69,7 +69,7 @@ public class TelemetryRestController {
                 count != null ? count : 0));
     }
 
-    @GetMapping("/telemetry")
+    @GetMapping("/vehicle-data")
     @PreAuthorize("hasAuthority('telemetry:read')")
     public ResponseEntity<Page<TelemetryMessage>> findTelemetry(
             @RequestParam Instant from,
