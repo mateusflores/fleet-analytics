@@ -66,6 +66,7 @@ public class LoginFrame extends JFrame {
         content.add(fields, BorderLayout.CENTER);
 
         JButton loginBtn = new JButton("Connect");
+        loginBtn.setVerticalAlignment(SwingConstants.CENTER);
         loginBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
         loginBtn.addActionListener(e -> fireLogin());
         loginBtn.putClientProperty("JButton.buttonType", "default");

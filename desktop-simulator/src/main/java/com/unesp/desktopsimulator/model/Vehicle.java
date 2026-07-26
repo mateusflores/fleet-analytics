@@ -14,6 +14,7 @@ public class Vehicle {
     private final String vehicleType;
 
     private Driver drivenBy = null;
+    private UUID currentTrip = null;
 
     public UUID getId() {
         return id;
@@ -53,6 +54,14 @@ public class Vehicle {
 
     public void setDrivenBy(Driver drivenBy) {
         this.drivenBy = drivenBy;
+    }
+
+    public UUID getCurrentTrip() {
+        return currentTrip;
+    }
+
+    public void setCurrentTrip(UUID currentTrip) {
+        this.currentTrip = currentTrip;
     }
 
     private Vehicle(Builder builder) {

@@ -1,10 +1,9 @@
 package com.unesp.desktopsimulator;
 
-import com.unesp.desktopsimulator.app.services.client.VehicleApiClient;
+import com.unesp.desktopsimulator.app.services.client.RestApiClient;
 import com.unesp.desktopsimulator.app.services.simulator.SimulatorRegistry;
 import com.unesp.desktopsimulator.model.Driver;
 import com.unesp.desktopsimulator.model.Vehicle;
-import com.unesp.desktopsimulator.view.ErrorDialog;
 import com.unesp.desktopsimulator.view.LoginFrame;
 import com.unesp.desktopsimulator.view.MainFrame;
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -16,6 +15,8 @@ import org.springframework.context.annotation.Bean;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @SpringBootApplication
 public class DesktopSimulatorApplication {
@@ -33,7 +34,7 @@ public class DesktopSimulatorApplication {
     @Bean
     CommandLineRunner startGui(ConfigurableApplicationContext ctx,
                                 SimulatorRegistry registry,
-                                VehicleApiClient apiClient) {
+                                RestApiClient apiClient) {
         return args -> SwingUtilities.invokeLater(() -> {
             LoginFrame loginFrame = new LoginFrame();
 
@@ -45,7 +46,9 @@ public class DesktopSimulatorApplication {
                         apiClient.login(loginFrame.getUsername(), loginFrame.getPassword());
                         List<Vehicle> vehicles = apiClient.fetchVehicles();
                         List<Driver> drivers = apiClient.fetchDrivers();
-                        return List.of(vehicles, drivers);
+                        Set<UUID> busyVehicleIds = apiClient.fetchBusyVehicleIds();
+                        Set<UUID> busyDriverIds = apiClient.fetchBusyDriverIds();
+                        return List.of(vehicles, drivers, busyVehicleIds, busyDriverIds);
                     }
 
                     @Override
@@ -55,13 +58,16 @@ public class DesktopSimulatorApplication {
                             List<?> result = get();
                             List<Vehicle> vehicles = (List<Vehicle>) result.get(0);
                             List<Driver> drivers = (List<Driver>) result.get(1);
+                            Set<UUID> busyVehicles = (Set<UUID>) result.get(2);
+                            Set<UUID> busyDrivers = (Set<UUID>) result.get(3);
 
                             loginFrame.markLoginSuccess();
                             loginFrame.dispose();
 
                             SwingUtilities.invokeLater(() -> {
                                 MainFrame mainFrame = new MainFrame(
-                                        registry, apiClient, vehicles, drivers);
+                                        registry, apiClient, vehicles, drivers,
+                                        busyVehicles, busyDrivers);
                                 mainFrame.setVisible(true);
                             });
                         } catch (Exception e) {

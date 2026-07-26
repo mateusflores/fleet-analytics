@@ -9,6 +9,7 @@ import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -16,18 +17,20 @@ public class VehicleTableModel extends AbstractTableModel {
 
     private static final String[] COLUMNS = {
             "Plate", "Nickname", "Driver", "Speed km/h",
-            "RPM", "Temp °C", "Fuel %", "Battery V", "Faults", "Status"
+            "RPM", "Temp \u00b0C", "Fuel %", "Battery V", "Faults", "Status"
     };
 
     private List<Vehicle> vehicles = new ArrayList<>();
     private List<SimulationState> states = new ArrayList<>();
     private Map<UUID, Driver> driverAssignments = Map.of();
+    private Set<UUID> busyVehicleIds = Set.of();
 
     public void update(List<Vehicle> vehicles, List<SimulationState> states,
-                       Map<UUID, Driver> driverAssignments) {
+                       Map<UUID, Driver> driverAssignments, Set<UUID> busyVehicleIds) {
         this.vehicles = new ArrayList<>(vehicles);
         this.states = new ArrayList<>(states);
         this.driverAssignments = driverAssignments;
+        this.busyVehicleIds = busyVehicleIds;
         fireTableDataChanged();
     }
 
@@ -67,6 +70,7 @@ public class VehicleTableModel extends AbstractTableModel {
         Vehicle vehicle = vehicles.get(row);
         SimulationState state = getState(vehicle);
         Driver driver = getDriver(vehicle);
+        boolean busy = busyVehicleIds.contains(vehicle.getId());
 
         return switch (col) {
             case 0 -> vehicle.getLicensePlate();
@@ -86,7 +90,11 @@ public class VehicleTableModel extends AbstractTableModel {
                     ? state.getActiveFaults().stream()
                     .map(Enum::name)
                     .collect(Collectors.joining(", ")) : "-";
-            case 9 -> state != null && state.isRunning() ? "Running" : "Stopped";
+            case 9 -> {
+                if (state != null && state.isRunning()) yield "Running";
+                if (busy) yield "In Trip";
+                yield "Available";
+            }
             default -> "";
         };
     }

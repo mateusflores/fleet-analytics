@@ -18,7 +18,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class RestApiClient {
@@ -113,6 +115,39 @@ public class RestApiClient {
                 .filter(ApiVehicleSummary::active)
                 .map(this::toVehicle)
                 .toList();
+    }
+
+    public Set<UUID> fetchBusyVehicleIds() {
+        return findOngoingTrips().stream()
+                .map(ApiTripSummary::vehicleId)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<UUID> fetchBusyDriverIds() {
+        return findOngoingTrips().stream()
+                .map(ApiTripSummary::driverId)
+                .collect(Collectors.toSet());
+    }
+
+    public ApiTripSummary findActiveTripByVehicle(UUID vehicleId) {
+        requireAuth();
+        ApiTripSummary response = restClient.get()
+                .uri("/api/v1/trips/vehicle/{vehicleId}/active", vehicleId)
+                .header("Authorization", bearer())
+                .retrieve()
+                .body(ApiTripSummary.class);
+        if (response == null) {
+            throw new IllegalStateException("No active trip found for vehicle " + vehicleId);
+        }
+        return response;
+    }
+
+    private List<ApiTripSummary> findOngoingTrips() {
+        requireAuth();
+        return fetchPage(
+                "/api/v1/trips/search?size=" + PAGE_SIZE + "&ongoingTrip=true",
+                ApiTripSummary.class
+        );
     }
 
     public UUID startTrip(UUID driverId, UUID vehicleId) {

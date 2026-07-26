@@ -29,7 +29,7 @@ public class FaultInjector {
         double lon = original.getLongitude() + (random.nextDouble() - 0.5) * 2 * GPS_DRIFT_DEG;
         double degradedAccuracy = original.getAccuracy() + 15.0 + random.nextDouble() * 10;
 
-        return new Position.Builder()
+        Position modified = new Position.Builder()
                 .timestamp(original.getTimestamp())
                 .latitude(lat)
                 .longitude(lon)
@@ -37,6 +37,10 @@ public class FaultInjector {
                 .heading(original.getHeading())
                 .accuracy(degradedAccuracy)
                 .build();
+        modified.setVehicleId(original.getVehicleId());
+        modified.setTripId(original.getTripId());
+        modified.setDriverId(original.getDriverId());
+        return modified;
     }
 
     public Telemetry applyToTelemetry(Telemetry original, Set<FaultType> faults) {
@@ -70,7 +74,7 @@ public class FaultInjector {
             rpm = Math.max(IDLE_RPM, Math.min(MAX_RPM, rpm));
         }
 
-        return new Telemetry.Builder()
+        Telemetry modified = new Telemetry.Builder()
                 .timestamp(original.getTimestamp())
                 .engineRpm(rpm)
                 .fuelLevelPct(fuel)
@@ -78,6 +82,10 @@ public class FaultInjector {
                 .odometerKm(original.getOdometerKm())
                 .batteryVoltage(voltage)
                 .build();
+        modified.setVehicleId(original.getVehicleId());
+        modified.setTripId(original.getTripId());
+        modified.setDriverId(original.getDriverId());
+        return modified;
     }
 
     private double randomGaussian(double mean, double stddev) {
