@@ -5,10 +5,14 @@ import com.unesp.fleetanalyticsapi.app.dtos.messaging.PositionMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.TelemetryMessage;
 import com.unesp.fleetanalyticsapi.app.sse.TelemetryEventPublisher;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
+
+import java.sql.Timestamp;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +21,7 @@ public class TelemetryConsumer {
 
     private final JdbcTemplate jdbcTemplate;
     private final TelemetryEventPublisher eventPublisher;
+    private final Logger logger = LoggerFactory.getLogger(TelemetryConsumer.class);
 
     @RabbitListener(queues = "${app.messaging.queue-position}")
     public void handlePosition(PositionMessage msg) {
@@ -25,7 +30,7 @@ public class TelemetryConsumer {
                     (time, vehicle_id, trip_id, latitude, longitude, speed_kmh, heading, accuracy)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                msg.timestamp(),
+                Timestamp.from(msg.timestamp()),
                 msg.vehicleId(),
                 msg.tripId(),
                 msg.latitude(),
@@ -39,13 +44,14 @@ public class TelemetryConsumer {
 
     @RabbitListener(queues = "${app.messaging.queue-telemetry}")
     public void handleTelemetry(TelemetryMessage msg) {
+        logger.debug("Telemetry received: {}", msg);
         jdbcTemplate.update("""
                 INSERT INTO telemetry.vehicle_telemetry
                     (time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,
                      engine_temp_c, odometer_km, battery_voltage)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                msg.timestamp(),
+                Timestamp.from(msg.timestamp()),
                 msg.vehicleId(),
                 msg.tripId(),
                 msg.engineRpm(),
@@ -64,7 +70,7 @@ public class TelemetryConsumer {
                     (time, vehicle_id, trip_id, event_type, severity, message)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                msg.timestamp(),
+                Timestamp.from(msg.timestamp()),
                 msg.vehicleId(),
                 msg.tripId(),
                 msg.eventType(),

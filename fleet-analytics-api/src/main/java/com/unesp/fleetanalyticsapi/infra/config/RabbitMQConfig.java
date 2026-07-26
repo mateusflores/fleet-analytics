@@ -1,11 +1,15 @@
 package com.unesp.fleetanalyticsapi.infra.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -86,6 +90,14 @@ public class RabbitMQConfig {
             @Qualifier("eventDlq") Queue dlq,
             DirectExchange dlExchange) {
         return BindingBuilder.bind(dlq).to(dlExchange).with("telemetry.dlq.event");
+    }
+
+    @Bean
+    MessageConverter messageConverter() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.findAndRegisterModules();
+        return new Jackson2JsonMessageConverter(mapper);
     }
 
     @Bean
