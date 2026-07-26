@@ -1,14 +1,13 @@
 package com.unesp.fleetanalyticsapi.infra.security;
 
-import com.unesp.fleetanalyticsapi.model.entities.Permission;
-import com.unesp.fleetanalyticsapi.model.entities.Role;
-import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Permission;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.core.GrantedAuthority;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;

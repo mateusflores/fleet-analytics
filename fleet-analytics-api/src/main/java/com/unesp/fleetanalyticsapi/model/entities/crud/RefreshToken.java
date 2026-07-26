@@ -1,4 +1,4 @@
-package com.unesp.fleetanalyticsapi.model.entities;
+package com.unesp.fleetanalyticsapi.model.entities.crud;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

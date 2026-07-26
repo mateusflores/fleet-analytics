@@ -1,6 +1,6 @@
 package com.unesp.fleetanalyticsapi.model.repositories.specifications;
 
-import com.unesp.fleetanalyticsapi.model.entities.Permission;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Permission;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 

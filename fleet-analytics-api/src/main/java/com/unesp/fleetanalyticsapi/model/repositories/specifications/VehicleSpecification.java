@@ -1,6 +1,6 @@
 package com.unesp.fleetanalyticsapi.model.repositories.specifications;
 
-import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Vehicle;
 import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import jakarta.persistence.criteria.Predicate;

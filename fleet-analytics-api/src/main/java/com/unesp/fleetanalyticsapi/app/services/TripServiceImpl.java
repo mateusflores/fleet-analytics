@@ -2,9 +2,9 @@ package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.CreateTripRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.TripSummary;
-import com.unesp.fleetanalyticsapi.model.entities.Trip;
-import com.unesp.fleetanalyticsapi.model.entities.User;
-import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Trip;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Vehicle;
 import com.unesp.fleetanalyticsapi.model.repositories.TripRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;

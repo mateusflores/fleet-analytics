@@ -1,6 +1,6 @@
 package com.unesp.fleetanalyticsapi.model.repositories.specifications;
 
-import com.unesp.fleetanalyticsapi.model.entities.Role;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
 import org.springframework.data.jpa.domain.Specification;
 
 public class RoleSpecification {

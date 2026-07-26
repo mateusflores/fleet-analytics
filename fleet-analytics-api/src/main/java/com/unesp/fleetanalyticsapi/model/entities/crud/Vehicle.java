@@ -1,4 +1,4 @@
-package com.unesp.fleetanalyticsapi.model.entities;
+package com.unesp.fleetanalyticsapi.model.entities.crud;
 
 import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;

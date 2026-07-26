@@ -1,6 +1,6 @@
 package com.unesp.fleetanalyticsapi.model.repositories;
 
-import com.unesp.fleetanalyticsapi.model.entities.Trip;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Trip;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

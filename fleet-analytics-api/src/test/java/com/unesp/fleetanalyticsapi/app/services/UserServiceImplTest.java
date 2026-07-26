@@ -1,8 +1,8 @@
 package com.unesp.fleetanalyticsapi.app.services;
 
 import com.unesp.fleetanalyticsapi.app.dtos.ResetPasswordRequest;
-import com.unesp.fleetanalyticsapi.model.entities.Role;
-import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,7 +20,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

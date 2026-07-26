@@ -3,7 +3,7 @@ package com.unesp.fleetanalyticsapi.app.controllers;
 import com.unesp.fleetanalyticsapi.app.dtos.CreateTripRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.TripSummary;
 import com.unesp.fleetanalyticsapi.app.services.TripService;
-import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

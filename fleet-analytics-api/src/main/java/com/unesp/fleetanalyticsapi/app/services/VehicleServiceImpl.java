@@ -3,7 +3,7 @@ package com.unesp.fleetanalyticsapi.app.services;
 import com.unesp.fleetanalyticsapi.app.dtos.CreateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.UpdateVehicleRequest;
 import com.unesp.fleetanalyticsapi.app.dtos.VehicleSummary;
-import com.unesp.fleetanalyticsapi.model.entities.Vehicle;
+import com.unesp.fleetanalyticsapi.model.entities.crud.Vehicle;
 import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;

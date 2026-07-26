@@ -1,6 +1,6 @@
 package com.unesp.fleetanalyticsapi.model.repositories.specifications;
 
-import com.unesp.fleetanalyticsapi.model.entities.User;
+import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
