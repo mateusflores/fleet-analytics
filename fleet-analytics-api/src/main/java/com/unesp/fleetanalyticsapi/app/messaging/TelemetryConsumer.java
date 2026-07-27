@@ -44,7 +44,6 @@ public class TelemetryConsumer {
 
     @RabbitListener(queues = "${app.messaging.queue-telemetry}")
     public void handleTelemetry(TelemetryMessage msg) {
-        logger.debug("Telemetry received: {}", msg);
         jdbcTemplate.update("""
                 INSERT INTO telemetry.vehicle_telemetry
                     (time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,

@@ -16,6 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.Disposable;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -113,8 +114,8 @@ public class TelemetrySseController {
         return jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, latitude, longitude, speed_kmh, heading, accuracy
                 FROM telemetry.vehicle_positions
-                WHERE (vehicle_id = ?::uuid OR ? IS NULL)
-                  AND (trip_id = ?::uuid OR ? IS NULL)
+                WHERE (?::uuid IS NULL OR vehicle_id = ?::uuid)
+                  AND (?::uuid IS NULL OR trip_id = ?::uuid)
                   AND time > ?::timestamptz
                 ORDER BY time ASC
                 LIMIT ?
@@ -131,7 +132,7 @@ public class TelemetrySseController {
                 ),
                 vehicleId, vehicleId,
                 tripId, tripId,
-                Instant.now().minusSeconds(cfg.seconds()),
+                Timestamp.from(Instant.now().minusSeconds(cfg.seconds())),
                 cfg.limit());
     }
 
@@ -141,8 +142,8 @@ public class TelemetrySseController {
                 SELECT time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,
                        engine_temp_c, odometer_km, battery_voltage
                 FROM telemetry.vehicle_telemetry
-                WHERE (vehicle_id = ?::uuid OR ? IS NULL)
-                  AND (trip_id = ?::uuid OR ? IS NULL)
+                WHERE (?::uuid IS NULL OR vehicle_id = ?::uuid)
+                  AND (?::uuid IS NULL OR trip_id = ?::uuid)
                   AND time > ?::timestamptz
                 ORDER BY time ASC
                 LIMIT ?
@@ -159,7 +160,7 @@ public class TelemetrySseController {
                 ),
                 vehicleId, vehicleId,
                 tripId, tripId,
-                Instant.now().minusSeconds(cfg.seconds()),
+                Timestamp.from(Instant.now().minusSeconds(cfg.seconds())),
                 cfg.limit());
     }
 
@@ -169,10 +170,10 @@ public class TelemetrySseController {
         return jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, event_type, severity, message
                 FROM telemetry.events
-                WHERE (vehicle_id = ?::uuid OR ? IS NULL)
-                  AND (trip_id = ?::uuid OR ? IS NULL)
-                  AND (event_type = ? OR ? IS NULL)
-                  AND (severity = ? OR ? IS NULL)
+                WHERE (?::uuid IS NULL OR vehicle_id = ?::uuid)
+                  AND (?::uuid IS NULL OR trip_id = ?::uuid)
+                  AND (?::text IS NULL OR event_type = ?)
+                  AND (?::text IS NULL OR severity = ?)
                   AND time > ?::timestamptz
                 ORDER BY time ASC
                 LIMIT ?
@@ -189,7 +190,7 @@ public class TelemetrySseController {
                 tripId, tripId,
                 eventType, eventType,
                 severity, severity,
-                Instant.now().minusSeconds(cfg.seconds()),
+                Timestamp.from(Instant.now().minusSeconds(cfg.seconds())),
                 cfg.limit());
     }
 
