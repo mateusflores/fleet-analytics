@@ -2,9 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 const ALERT_SEVERITY_LABELS: Record<string, string> = {
   CRITICAL: 'CRÍTICO',
-  HIGH: 'ALTO',
-  MEDIUM: 'MÉDIO',
-  LOW: 'BAIXO'
+  WARNING: 'AVISO',
 };
 
 @Pipe({

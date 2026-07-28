@@ -8,6 +8,7 @@ import { DeterministicAlert } from '../../../models/insight/deterministic-alert.
 import { InsightService } from '../../../services/insight/insight.service';
 import { getPtBrPaginatorIntl } from '../../../shared/config/paginator/paginator-intl-pt-br';
 import { AlertSeverityLabelPipe } from '../../../shared/pipes/alert-severity-label.pipe';
+import { AlertTypeLabelPipe } from '../../../shared/pipes/alert-type-label.pipe';
 
 @Component({
   selector: 'app-insight-list',
@@ -16,7 +17,8 @@ import { AlertSeverityLabelPipe } from '../../../shared/pipes/alert-severity-lab
     MatIconModule, 
     MatPaginatorModule, 
     MatProgressSpinnerModule, 
-    AlertSeverityLabelPipe
+    AlertSeverityLabelPipe,
+    AlertTypeLabelPipe
   ],
   providers: [{ provide: MatPaginatorIntl, useFactory: getPtBrPaginatorIntl }],
   templateUrl: './insight-list.component.html',
@@ -27,20 +29,12 @@ export class InsightListComponent implements OnInit {
 
   aiInsights: AiInsight[] = [];
   alerts: DeterministicAlert[] = [];
+  currentLimit = 5;
   isLoadingInsights = true;
   isLoadingAlerts = true;
-  pageIndex = 0;
-  pageSize = 5;
-  totalAlerts = 0;
 
   ngOnInit(): void {
     this.loadAiInsights();
-    this.loadAlerts();
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
     this.loadAlerts();
   }
 
@@ -49,7 +43,7 @@ export class InsightListComponent implements OnInit {
   }
 
   alertIcon(severity: string): string {
-    return severity === 'CRITICAL' ? 'error_outline' : severity === 'LOW' ? 'info_outline' : 'warning_amber';
+    return severity === 'CRITICAL' ? 'error_outline' : 'warning_amber';
   }
 
   severityClass(severity: string): string {
@@ -71,15 +65,18 @@ export class InsightListComponent implements OnInit {
 
   private loadAlerts(): void {
     this.isLoadingAlerts = true;
-    this.insightService.getDeterministicAlerts(this.pageIndex, this.pageSize).subscribe({
+    this.insightService.getDeterministicAlerts().subscribe({
       next: (response) => { 
-        this.alerts = response.content; 
-        this.totalAlerts = response.totalElements; 
+        this.alerts = response;
         this.isLoadingAlerts = false; 
       },
       error: () => { 
         this.isLoadingAlerts = false; 
       }
     });
+  }
+
+  updateLimit(): void {
+    this.currentLimit += 5;
   }
 }

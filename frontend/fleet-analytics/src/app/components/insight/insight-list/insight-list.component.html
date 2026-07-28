@@ -49,7 +49,7 @@
       <p class="empty-state">Nenhum alerta encontrado.</p>
     } @else {
       <div class="alert-list">
-        @for (alert of alerts; track alert.timestamp + alert.tripId) {
+        @for (alert of alerts.slice(0, currentLimit); track alert.timestamp + alert.tripId) {
           <article class="alert-card" [class]="severityClass(alert.severity)">
             <div class="alert-icon">
               <mat-icon>{{ alertIcon(alert.severity) }}</mat-icon>
@@ -57,7 +57,7 @@
             <div class="alert-content">
               <div class="alert-title-row">
                 <div>
-                  <h3>{{ alert.eventType }}</h3>
+                  <h3>{{ alert.eventType | alertTypeLabel }}</h3>
                   <span class="severity-badge">{{ alert.severity | alertSeverityLabel }}</span>
                 </div>
                 <time>{{ alert.timestamp | date:'dd/MM/yyyy, HH:mm' }}</time>
@@ -70,9 +70,10 @@
             </div>
           </article>
         }
+        @if (alerts.length > currentLimit) {
+          <button mat-button class="load-more-btn" (click)="updateLimit()">Carregar mais</button>
+        }
       </div>
-      <mat-paginator class="paginator" [length]="totalAlerts" [pageSize]="pageSize" [pageIndex]="pageIndex"
-        [pageSizeOptions]="[5, 10, 20]" (page)="onPageChange($event)"></mat-paginator>
     }
   </section>
 </section>

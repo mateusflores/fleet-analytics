@@ -153,14 +153,9 @@
     border-radius: 14px;
 }
 
-.severity-high {
+.severity-warning {
     background: #fff8ee;
     border-color: #f6c98d;
-}
-
-.severity-medium {
-    background: #f0f6ff;
-    border-color: #b9d4ff;
 }
 
 .severity-critical {
@@ -168,25 +163,8 @@
     border-color: #ffc2c8;
 }
 
-.severity-low {
-    background: #f1faf5;
-    border-color: #b9e6c9;
-}
-
-.alert-icon {
-    color: #c66a00;
-}
-
-.severity-medium .alert-icon {
-    color: #1f63f2;
-}
-
 .severity-critical .alert-icon {
     color: #dc2626;
-}
-
-.severity-low .alert-icon {
-    color: #16804b;
 }
 
 .alert-content {
@@ -228,6 +206,16 @@
     align-items: center;
     min-height: 140px;
     color: #737c8c;
+}
+
+.load-more-btn {
+    background: #f6f7f9;
+    color: #2d3139;
+    border: 1px solid #dfe1e5;
+    height: 3rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 @media (max-width: 720px) {
