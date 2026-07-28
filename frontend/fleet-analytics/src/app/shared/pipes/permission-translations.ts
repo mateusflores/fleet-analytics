@@ -67,5 +67,9 @@ export const PERMISSION_TRANSLATIONS: Record<string, PermissionTranslation> = {
   'roles:delete': {
     name: 'Excluir perfis',
     description: 'Excluir perfis'
+  },
+  'telemetry:read': {
+    name: 'Visualizar telemetria',
+    description: 'Visualizar dados de telemetria dos veículos'
   }
 };
