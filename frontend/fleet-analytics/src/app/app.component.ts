@@ -45,8 +45,8 @@ export class AppComponent {
 
   readonly navItems: NavItem[] = [
     {
-      label: 'Dashboard',
-      icon: 'grid_view',
+      label: 'Home',
+      icon: 'home',
       route: '/'
     },
     {

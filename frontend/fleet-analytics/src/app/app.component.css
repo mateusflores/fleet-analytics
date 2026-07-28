@@ -73,6 +73,11 @@
   padding: 24px;
 }
 
+.app-content:has(.home) {
+  height: auto;
+  min-height: 0;
+}
+
 @media (max-width: 991px) {
   .app-sidenav {
     width: 240px;

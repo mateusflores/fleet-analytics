@@ -14,6 +14,7 @@ import { TripListComponent } from './components/trip/trip-list/trip-list.compone
 import { InsightListComponent } from './components/insight/insight-list/insight-list.component';
 import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
+import { HomeComponent } from './components/home/home.component';
 
 export const routes: Routes = [
   {
@@ -26,11 +27,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        component: DashboardComponent
-      },
-      {
-        path: 'dashboard',
-        component: DashboardComponent
+        component: HomeComponent
       },
       {
         path: 'machines',
