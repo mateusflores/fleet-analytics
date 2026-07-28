@@ -30,12 +30,11 @@ public class TelemetryRestController {
 
     @GetMapping("/vehicle-positions")
     @PreAuthorize("hasAuthority('telemetry:read')")
-    public ResponseEntity<Page<PositionMessage>> findPositions(
+    public ResponseEntity<List<PositionMessage>> findPositions(
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID vehicleId,
-            @RequestParam(required = false) UUID tripId,
-            @PageableDefault(size = 100) Pageable pageable) {
+            @RequestParam(required = false) UUID tripId) {
 
         Long count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM telemetry.vehicle_positions
@@ -64,21 +63,18 @@ public class TelemetryRestController {
                         rs.getObject("accuracy", Double.class)
                 ),
                 Timestamp.from(from), Timestamp.from(to),
-                vehicleId, vehicleId, tripId, tripId,
-                pageable.getPageSize(), pageable.getOffset());
+                vehicleId, vehicleId, tripId, tripId);
 
-        return ResponseEntity.ok(new PageImpl<>(data, pageable,
-                count != null ? count : 0));
+        return ResponseEntity.ok(data);
     }
 
     @GetMapping("/vehicle-data")
     @PreAuthorize("hasAuthority('telemetry:read')")
-    public ResponseEntity<Page<TelemetryMessage>> findTelemetry(
+    public ResponseEntity<List<TelemetryMessage>> findTelemetry(
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID vehicleId,
-            @RequestParam(required = false) UUID tripId,
-            @PageableDefault(size = 100) Pageable pageable) {
+            @RequestParam(required = false) UUID tripId) {
 
         Long count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM telemetry.vehicle_telemetry
@@ -95,7 +91,6 @@ public class TelemetryRestController {
                   AND (?::uuid IS NULL OR vehicle_id = ?::uuid)
                   AND (?::uuid IS NULL OR trip_id = ?::uuid)
                 ORDER BY time ASC
-                LIMIT ? OFFSET ?
                 """,
                 (rs, rowNum) -> new TelemetryMessage(
                         rs.getObject("vehicle_id", UUID.class),
@@ -108,23 +103,20 @@ public class TelemetryRestController {
                         rs.getDouble("battery_voltage")
                 ),
                 Timestamp.from(from), Timestamp.from(to),
-                vehicleId, vehicleId, tripId, tripId,
-                pageable.getPageSize(), pageable.getOffset());
+                vehicleId, vehicleId, tripId, tripId);
 
-        return ResponseEntity.ok(new PageImpl<>(data, pageable,
-                count != null ? count : 0));
+        return ResponseEntity.ok(data);
     }
 
     @GetMapping("/events")
     @PreAuthorize("hasAuthority('telemetry:read')")
-    public ResponseEntity<Page<EventMessage>> findEvents(
+    public ResponseEntity<List<EventMessage>> findEvents(
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID tripId,
             @RequestParam(required = false) String eventType,
-            @RequestParam(required = false) String severity,
-            @PageableDefault(size = 100) Pageable pageable) {
+            @RequestParam(required = false) String severity) {
 
         Long count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM telemetry.events
@@ -146,7 +138,6 @@ public class TelemetryRestController {
                   AND (?::text IS NULL OR event_type = ?)
                   AND (?::text IS NULL OR severity = ?)
                 ORDER BY time ASC
-                LIMIT ? OFFSET ?
                 """,
                 (rs, rowNum) -> new EventMessage(
                         rs.getObject("vehicle_id", UUID.class),
@@ -157,10 +148,8 @@ public class TelemetryRestController {
                         rs.getString("message")
                 ),
                 Timestamp.from(from), Timestamp.from(to), vehicleId, vehicleId, tripId, tripId,
-                eventType, eventType, severity, severity,
-                pageable.getPageSize(), pageable.getOffset());
+                eventType, eventType, severity, severity);
 
-        return ResponseEntity.ok(new PageImpl<>(data, pageable,
-                count != null ? count : 0));
+        return ResponseEntity.ok(data);
     }
 }
