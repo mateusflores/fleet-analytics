@@ -15,6 +15,7 @@ import { MachineService } from '../../../services/machine/machine.service';
 import { MachineTelemetrySeriesPoint } from '../../../models/machine/telemetry/machine-telemetry-series-point.model';
 import { TelemetryMetric } from '../../../models/machine/telemetry/machine-telemetry-metric.type';
 import { TinyColor } from '@ctrl/tinycolor';
+import { MachineTelemetry } from '../../../models/machine/telemetry/machine-telemetry.model';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries;
@@ -42,13 +43,15 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
   @Input() colorAverageChart: string = "#007BFF";
   @Input() lightenFactor: number = 40
   @Input() unit: string = ""
+  @Input() newData: MachineTelemetry | null = null;
 
   private readonly _machineService = inject(MachineService);
   private readonly _destroyRef = inject(DestroyRef);
 
   chart = viewChild<ChartComponent>('chart');
   chartSeries = signal<ApexAxisChartSeries>([]);
-  chartOptions!: Partial<ChartOptions>; 
+  chartOptions!: Partial<ChartOptions>;
+  chartData: { x: number; y: number }[] = [];
 
   ngOnInit(): void {
     this.configChart();
@@ -56,14 +59,53 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.loadData()
+    console.log("entrou aqui")
+    if (this.newData) {
+      switch (this.metric) {
+        case 'rpm':
+          this.chartData.push({
+            x: new Date(this.newData.timestamp).getTime(),
+            y: this.newData.engineRpm ?? null
+          });
+          break;
+        case 'temperature':
+          this.chartData.push({
+            x: new Date(this.newData.timestamp).getTime(),
+            y: this.newData.engineTempC ?? null
+          });
+          break;
+        case 'fuel':
+          this.chartData.push({
+            x: new Date(this.newData.timestamp).getTime(),
+            y: this.newData.fuelLevelPct ?? null
+          });
+          break;
+        case 'battery':
+          this.chartData.push({
+            x: new Date(this.newData.timestamp).getTime(),
+            y: this.newData.batteryVoltage ?? null
+          });
+          break;
+        case 'odometer':
+          this.chartData.push({
+            x: new Date(this.newData.timestamp).getTime(),
+            y: this.newData.odometerKm ?? null
+          });
+          break;
+        default:
+          break;
+      }
+      this.chartSeries.set([
+        { name: 'Média', type: 'line', data: this.chartData }
+      ]);
+    }
   }
 
   configChart(): void {
     this.chartOptions = {
       chart: {
         height: 350,
-        type: 'rangeArea',
+        type: 'line',
         animations: { enabled: false },
         toolbar: { show: true },
         defaultLocale: 'pt-br',
@@ -94,81 +136,43 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
           }
         }
       },
-      colors: [
-        new TinyColor(this.colorAverageChart).lighten(this.lightenFactor).toString(), 
-        this.colorAverageChart
-      ],
-      stroke: { curve: 'smooth', width: [0, 3] },
-      fill: { opacity: [0.8, 1] },
+      colors: [this.colorAverageChart],
+      stroke: { curve: 'smooth', width: 3 },
+      fill: { opacity: 0.6 },
       tooltip: {
         shared: true,
         intersect: false,
         x: { format: 'dd/MM/yyyy HH:mm' },
-        custom: ({ series, seriesIndex, dataPointIndex, w }) => {
-          const colorAverageChart = this.colorAverageChart
-          const colorRangeChart = new TinyColor(this.colorAverageChart).lighten(this.lightenFactor).toString();
-
+        custom: ({ dataPointIndex, w }) => {
+          const colorAverageChart = this.colorAverageChart;
           const seriesData = w.config.series;
-  
-          const rangeSeries = seriesData[0]; 
-          const averageSeries = seriesData[1]; 
-  
-          const rangePoint = rangeSeries.data[dataPointIndex];
-          const avgPoint = averageSeries.data[dataPointIndex];
-  
-          const yRange = Array.isArray(rangePoint) ? rangePoint[1] : rangePoint.y;
-          const min = yRange[0];
-          const max = yRange[1];
-          
-          const avg = Array.isArray(avgPoint) ? avgPoint[1] : avgPoint.y;
-  
-          let timestamp;
-  
-          if (rangePoint) {
-            timestamp = Array.isArray(rangePoint) ? rangePoint[0] : rangePoint.x;
-          } else if (avgPoint) {
-            timestamp = Array.isArray(avgPoint) ? avgPoint[0] : avgPoint.x;
-          }
-  
-          let formattedDate = 'Data indisponível'; 
-  
+          const mainSeries = seriesData[0];
+          const point = mainSeries?.data?.[dataPointIndex];
+
+          const timestamp = Array.isArray(point) ? point[0] : point?.x;
+          const value = Array.isArray(point) ? point[1] : point?.y;
+
+          let formattedDate = 'Data indisponível';
+
           if (timestamp) {
             formattedDate = new Date(timestamp).toLocaleString('pt-BR', {
-                day: '2-digit', month: '2-digit', year: 'numeric', 
-                hour: '2-digit', minute: '2-digit'
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
             });
           }
-  
+
           return `
             <div style="padding: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); min-width: 180px;">
               <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 12px; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
                 ${formattedDate}
               </div>
-              
-              <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="display: block; width: 10px; height: 10px; border-radius: 50%; background-color: ${colorAverageChart};"></span>
-                    <span style="font-size: 13px; color: #475569; font-weight: 500;">Média</span>
-                  </div>
-                  <span style="font-size: 14px; font-weight: 700; color: #0f172a;">${avg}${this.unit}</span>
+
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="display: block; width: 10px; height: 10px; border-radius: 50%; background-color: ${colorAverageChart};"></span>
+                  <span style="font-size: 13px; color: #475569; font-weight: 500;">Valor</span>
                 </div>
-  
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="display: block; width: 10px; height: 10px; border-radius: 50%; background-color: ${colorRangeChart};"></span>
-                    <span style="font-size: 13px; color: #475569; font-weight: 500;">Máximo</span>
-                  </div>
-                  <span style="font-size: 13px; font-weight: 600; color: #334155;">${max}${this.unit}</span>
-                </div>
-  
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="display: block; width: 10px; height: 10px; border-radius: 50%; background-color: ${colorRangeChart};"></span>
-                    <span style="font-size: 13px; color: #475569; font-weight: 500;">Mínimo</span>
-                  </div>
-                  <span style="font-size: 13px; font-weight: 600; color: #334155;">${min}${this.unit}</span>
-                </div>
+                <span style="font-size: 14px; font-weight: 700; color: #0f172a;">${typeof value === "number" ? +value.toFixed(4) : value ?? 'N/A'}${this.unit}</span>
               </div>
             </div>
           `;
@@ -181,32 +185,48 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
 
   loadData(): void {
     this._machineService
-      .getMachineTelemetrySeries(this.machineId, this.periodStart, this.metric)
+      .getMachineTelemetrySeries(this.machineId, this.periodStart)
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe({
         next: (points) => {
-          const minMaxData = this.mapToMinMaxSeries(points);
-          const averageData = this.mapToAverageSeries(points);
+          this.chartData = this.mapToMetric(points);
           this.chartSeries.set([
-            { name: 'Faixa', type: 'rangeArea', data: minMaxData },
-            { name: 'Média', type: 'line', data: averageData }
+            { name: 'Média', type: 'line', data: this.chartData }
           ]);
         },
         error: (err) => console.error('Error loading telemetry series:', err)
       });
   }
 
-  private mapToMinMaxSeries(points: MachineTelemetrySeriesPoint[]): { x: number; y: [number, number] }[] {
-    return points.map((p) => ({
-      x: new Date(p.timestamp).getTime(),
-      y: [p.min, p.max]
-    }));
-  }
-
-  private mapToAverageSeries(points: MachineTelemetrySeriesPoint[]): { x: number; y: number }[] {
-    return points.map((p) => ({
-      x: new Date(p.timestamp).getTime(),
-      y: p.average
-    }));
+  private mapToMetric(points: MachineTelemetrySeriesPoint[]): { x: number; y: number }[] {
+    switch (this.metric) {
+      case 'rpm':
+        return points.map((p) => ({
+          x: new Date(p.timestamp).getTime(),
+          y: p.engineRpm
+        }));
+      case 'temperature':
+        return points.map((p) => ({
+          x: new Date(p.timestamp).getTime(),
+          y: p.engineTempC
+        }));
+      case 'fuel':
+        return points.map((p) => ({
+          x: new Date(p.timestamp).getTime(),
+          y: p.fuelLevelPct
+        }));
+      case 'battery':
+        return points.map((p) => ({
+          x: new Date(p.timestamp).getTime(),
+          y: p.batteryVoltage
+        }));
+      case 'odometer':
+        return points.map((p) => ({
+          x: new Date(p.timestamp).getTime(),
+          y: p.odometerKm
+        }));
+      default:
+        return [];
+    }
   }
 }

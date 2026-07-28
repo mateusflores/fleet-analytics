@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, Input, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +19,8 @@ import { MachineTelemetry } from '../../../models/machine/telemetry/machine-tele
 import { TelemetryChartComponent } from '../../../shared/components/telemetry-chart/telemetry-chart.component';
 import { AuthService } from '../../../services/auth/auth.service';
 import { MachineFuelType } from '../../../models/machine/mahcine-fuel-type.model';
+import { SseService } from '../../../services/sse/sse.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-machine-details',
@@ -47,6 +49,7 @@ export class MachineDetailsComponent implements OnInit {
   private readonly _router = inject(Router);
   private readonly _formBuilder = inject(FormBuilder);
   private readonly _snackbar = inject(SnackbarService);
+  private destroyRef = inject(DestroyRef);
   readonly authService: AuthService = inject(AuthService);
 
   readonly machineTypes = Object.values(MachineType);
@@ -97,6 +100,7 @@ export class MachineDetailsComponent implements OnInit {
         }
         this.machine = machine;
         this.isLoading = false;
+        this.getVehicleTelemetry();
       },
       error: (error) => {
         console.error('Error fetching machine details:', error);
@@ -104,6 +108,22 @@ export class MachineDetailsComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  private getVehicleTelemetry(): void {
+    if (!this.machine) {
+      return;
+    }
+    this._machineService.streamMachineTelemetry(this.machine.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (telemetry) => {
+          this.machineTelemetry = telemetry;
+        },
+        error: (error) => {
+          console.error('Error streaming machine telemetry:', error);
+        }
+      });
   }
 
   startEdit(): void {

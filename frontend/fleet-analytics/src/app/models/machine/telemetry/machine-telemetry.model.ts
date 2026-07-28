@@ -1,7 +1,8 @@
 export interface MachineTelemetry {
-  id: number;
-  rpm: number;
-  temperature: number;
-  fuel: number;
-  pressure: number;
+  batteryVoltage: number;
+  engineRpm: number;
+  engineTempC: number;
+  fuelLevelPct: number;
+  odometerKm: number;
+  timestamp: string;
 }

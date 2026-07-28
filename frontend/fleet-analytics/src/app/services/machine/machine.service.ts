@@ -2,11 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Machine } from '../../models/machine/machine.model';
 import { MachineTelemetry } from '../../models/machine/telemetry/machine-telemetry.model';
-import { delay, map, Observable, of, timer } from 'rxjs';
+import { delay, map, Observable, of, tap, timer } from 'rxjs';
 import { PaginatedResponse } from '../../responses/paginated-response.model';
 import { MachineTelemetrySeriesPoint } from '../../models/machine/telemetry/machine-telemetry-series-point.model';
 import { TelemetryMetric } from '../../models/machine/telemetry/machine-telemetry-metric.type';
 import { environment } from '../../../environments/environment';
+import { SseService } from '../sse/sse.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,14 +16,13 @@ import { environment } from '../../../environments/environment';
 export class MachineService {
 
   private readonly _httpClient: HttpClient = inject(HttpClient);
+  private readonly _sseService = inject(SseService);
   private readonly _vehiclesUrl = `${environment.apiBaseUrl}/vehicles`;
-
-  /** Base do WebSocket (ex.: `ws://localhost:3000/ws/machines`). Ajuste conforme o backend. */
-  private readonly _machineTelemetryWsBaseUrl = 'ws://localhost:3000/ws/machines';
+  private readonly _vehicleTelemetryUrl = `${environment.apiBaseUrl}/telemetry/vehicle-data`;
+  private readonly _authService = inject(AuthService);
 
   constructor() { }
   
-
   public getMachines(
     field: keyof Machine = 'nickname',
     term = '',
@@ -43,22 +44,12 @@ export class MachineService {
     return this._httpClient.get<Machine>(`${this._vehiclesUrl}/${id}`);
   }
 
-  public getMachineTelemetrySeries(
-    _machineId: string,
-    _periodStart: Date,
-    _metric: TelemetryMetric
-  ): Observable<MachineTelemetrySeriesPoint[]> {
-    return of([]).pipe(delay(200));
+  public getMachineTelemetrySeries(_machineId: string, _periodStart: Date): Observable<MachineTelemetrySeriesPoint[]> {
+    return this._httpClient.get<MachineTelemetrySeriesPoint[]>(`${this._vehicleTelemetryUrl}?vehicleId=${_machineId}&from=${_periodStart.toISOString()}&to=${new Date().toISOString()}`);
   }
 
-  public streamMachineTelemetry(_machineId: string): Observable<MachineTelemetry> {
-    return of({
-      id: 0,
-      rpm: 0,
-      temperature: 0,
-      fuel: 0,
-      pressure: 0
-    });
+  public streamMachineTelemetry(id: string): Observable<any> {
+    return this._sseService.connect<any>(`${this._vehicleTelemetryUrl}/sse?vehicleId=${id}&token=${this._authService.getAccessToken()}`);
   }
 
   /** Mock: 40 pontos de `periodStart` até agora (cada ponto = média/máx/mín de 2 amostras no tempo). */

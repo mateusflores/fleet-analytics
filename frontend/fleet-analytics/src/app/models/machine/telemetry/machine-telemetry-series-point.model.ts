@@ -1,6 +1,8 @@
 export interface MachineTelemetrySeriesPoint {
     timestamp: string;
-    average: number;
-    max: number;
-    min: number;
+    engineRpm: number;
+    fuelLevelPct: number;
+    engineTempC: number;
+    odometerKm: number;
+    batteryVoltage: number;
 }

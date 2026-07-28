@@ -1,1 +1,1 @@
-export type TelemetryMetric = 'rpm' | 'temperature' | 'fuel' | 'pressure';
+export type TelemetryMetric = 'rpm' | 'temperature' | 'fuel' | 'battery' | 'odometer';

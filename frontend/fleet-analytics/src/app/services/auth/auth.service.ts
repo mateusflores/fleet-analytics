@@ -147,7 +147,6 @@ export class AuthService {
 
   logout(): void {
     const refreshToken = this.getRefreshToken();
-    console.log(refreshToken)
 
     if (refreshToken) {
       const body: LogoutRequest = { refreshToken };

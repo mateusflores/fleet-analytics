@@ -61,8 +61,20 @@
 
 .machine-metrics {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 1rem;
+  width: 100%;
+}
+
+.metric:nth-child(1),
+.metric:nth-child(2),
+.metric:nth-child(3) {
+  grid-column: span 2;
+}
+
+.metric:nth-child(4),
+.metric:nth-child(5) {
+    grid-column: span 3;
 }
 
 .machine-charts {
@@ -162,6 +174,12 @@
 .period-button.selected {
   background: #1f63f2 !important;
   color: #fff !important;
+}
+
+@media (max-width: 1200px) {
+  .machine-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {

@@ -11,6 +11,7 @@ import { UserListComponent } from './components/user/user-list/user-list.compone
 import { UserFormComponent } from './components/user/user-form/user-form.component';
 import { UserDetailsComponent } from './components/user/user-details/user-details.component';
 import { TripListComponent } from './components/trip/trip-list/trip-list.component';
+import { InsightListComponent } from './components/insight/insight-list/insight-list.component';
 import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
 
@@ -50,6 +51,10 @@ export const routes: Routes = [
         path: 'trips',
         component: TripListComponent,
         canActivate: [permissionGuard('travel:read')]
+      },
+      {
+        path: 'insights',
+        component: InsightListComponent
       },
       {
         path: 'roles',

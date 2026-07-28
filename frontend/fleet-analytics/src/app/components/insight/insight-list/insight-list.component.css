@@ -1,0 +1,259 @@
+:host {
+    display: block;
+}
+
+.insights-page {
+    max-width: 1440px;
+    padding: 8px 10px 28px;
+}
+
+.page-header {
+    margin-bottom: 38px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.page-description {
+    margin: 8px 0 0;
+    color: #687080;
+    font-size: 1rem;
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.section-heading>mat-icon {
+    margin-top: 3px;
+    color: #1f63f2;
+}
+
+.section-heading h2 {
+    margin: 0;
+    color: #172033;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.section-heading p {
+    margin: 5px 0 0;
+    color: #687080;
+    font-size: .9rem;
+}
+
+.insight-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.insight-card {
+    display: flex;
+    min-height: 128px;
+    gap: 16px;
+    padding: 22px;
+    border: 1px solid;
+    border-radius: 16px;
+    box-sizing: border-box;
+}
+
+.type-warning {
+    background: #fff8ee;
+    border-color: #f6c98d;
+}
+
+.type-info {
+    background: #f0f6ff;
+    border-color: #b9d4ff;
+}
+
+.type-critical {
+    background: #fff3f4;
+    border-color: #ffc2c8;
+}
+
+.icon-container {
+    flex: 0 0 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #fff;
+    color: #475569;
+}
+
+.type-warning .icon-container {
+    color: #c66a00;
+}
+
+.type-info .icon-container {
+    color: #1f63f2;
+}
+
+.type-critical .icon-container {
+    color: #dc2626;
+}
+
+.card-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.card-title-row, .alert-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.card-title-row h3, .alert-title-row h3 {
+    margin: 0;
+    color: #172033;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.card-content p,
+.alert-content p {
+    margin: 8px 0 0;
+    color: #4e5868;
+    font-size: .92rem;
+    line-height: 1.45;
+}
+
+.card-title-row time,
+.alert-title-row time {
+    flex: 0 0 auto;
+    color: #6f7785;
+    font-size: .78rem;
+    white-space: nowrap;
+}
+
+.alerts-section {
+    margin-top: 44px;
+}
+
+.alert-list {
+    display: grid;
+    gap: 12px;
+}
+
+.alert-card {
+    display: flex;
+    gap: 16px;
+    padding: 18px 22px;
+    border: 1px solid #e4e4e7;
+    border-radius: 14px;
+}
+
+.severity-high {
+    background: #fff8ee;
+    border-color: #f6c98d;
+}
+
+.severity-medium {
+    background: #f0f6ff;
+    border-color: #b9d4ff;
+}
+
+.severity-critical {
+    background: #fff3f4;
+    border-color: #ffc2c8;
+}
+
+.severity-low {
+    background: #f1faf5;
+    border-color: #b9e6c9;
+}
+
+.alert-icon {
+    color: #c66a00;
+}
+
+.severity-medium .alert-icon {
+    color: #1f63f2;
+}
+
+.severity-critical .alert-icon {
+    color: #dc2626;
+}
+
+.severity-low .alert-icon {
+    color: #16804b;
+}
+
+.alert-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.alert-title-row > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.severity-badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(23, 32, 51, .08);
+    color: #465166;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.alert-meta {
+    display: flex;
+    gap: 18px;
+    margin-top: 12px;
+    color: #737c8c;
+    font-size: .75rem;
+}
+
+.paginator {
+    margin-top: 16px;
+}
+
+.loading-state, .empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 140px;
+    color: #737c8c;
+}
+
+@media (max-width: 720px) {
+    .insight-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-title-row, .alert-title-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .alert-title-row>div {
+        flex-wrap: wrap;
+    }
+
+    .alert-meta {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .insight-card, .alert-card {
+        padding: 18px;
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+}
