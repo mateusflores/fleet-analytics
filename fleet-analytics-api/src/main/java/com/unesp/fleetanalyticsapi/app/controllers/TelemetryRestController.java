@@ -4,10 +4,6 @@ import com.unesp.fleetanalyticsapi.app.dtos.messaging.EventMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.PositionMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.TelemetryMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,13 +32,6 @@ public class TelemetryRestController {
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID tripId) {
 
-        Long count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*) FROM telemetry.vehicle_positions
-                WHERE time >= ?::timestamptz AND time <= ?::timestamptz
-                  AND (?::uuid IS NULL OR vehicle_id = ?::uuid)
-                  AND (?::uuid IS NULL OR trip_id = ?::uuid)
-                """, Long.class, Timestamp.from(from), Timestamp.from(to), vehicleId, vehicleId, tripId, tripId);
-
         List<PositionMessage> data = jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, latitude, longitude, speed_kmh, heading, accuracy
                 FROM telemetry.vehicle_positions
@@ -50,7 +39,6 @@ public class TelemetryRestController {
                   AND (?::uuid IS NULL OR vehicle_id = ?::uuid)
                   AND (?::uuid IS NULL OR trip_id = ?::uuid)
                 ORDER BY time ASC
-                LIMIT ? OFFSET ?
                 """,
                 (rs, rowNum) -> new PositionMessage(
                         rs.getObject("vehicle_id", UUID.class),
@@ -75,13 +63,6 @@ public class TelemetryRestController {
             @RequestParam Instant to,
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID tripId) {
-
-        Long count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*) FROM telemetry.vehicle_telemetry
-                WHERE time >= ?::timestamptz AND time <= ?::timestamptz
-                  AND (?::uuid IS NULL OR vehicle_id = ?::uuid)
-                  AND (?::uuid IS NULL OR trip_id = ?::uuid)
-                """, Long.class, Timestamp.from(from), Timestamp.from(to), vehicleId, vehicleId, tripId, tripId);
 
         List<TelemetryMessage> data = jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,
@@ -117,17 +98,6 @@ public class TelemetryRestController {
             @RequestParam(required = false) UUID tripId,
             @RequestParam(required = false) String eventType,
             @RequestParam(required = false) String severity) {
-
-        Long count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*) FROM telemetry.events
-                WHERE time >= ?::timestamptz AND time <= ?::timestamptz
-                  AND (?::uuid IS NULL OR vehicle_id = ?::uuid)
-                  AND (?::uuid IS NULL OR trip_id = ?::uuid)
-                  AND (?::text IS NULL OR event_type = ?)
-                  AND (?::text IS NULL OR severity = ?)
-                """, Long.class,
-                Timestamp.from(from), Timestamp.from(to), vehicleId, vehicleId, tripId, tripId,
-                eventType, eventType, severity, severity);
 
         List<EventMessage> data = jdbcTemplate.query("""
                 SELECT time, vehicle_id, trip_id, event_type, severity, message

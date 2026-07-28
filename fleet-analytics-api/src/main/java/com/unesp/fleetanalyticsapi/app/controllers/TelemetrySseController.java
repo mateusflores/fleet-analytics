@@ -34,7 +34,8 @@ public class TelemetrySseController {
     public SseEmitter streamPositions(
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID tripId,
-            @RequestParam(defaultValue = "5m") String duration) {
+            @RequestParam(defaultValue = "5m") String duration,
+            @RequestParam String token) {
 
         DurationConfig cfg = DurationConfig.from(duration);
         List<PositionMessage> snapshot = loadRecentPositions(vehicleId, tripId, cfg);
@@ -49,7 +50,8 @@ public class TelemetrySseController {
     public SseEmitter streamTelemetry(
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID tripId,
-            @RequestParam(defaultValue = "5m") String duration) {
+            @RequestParam(defaultValue = "5m") String duration,
+            @RequestParam String token) {
 
         DurationConfig cfg = DurationConfig.from(duration);
         List<TelemetryMessage> snapshot = loadRecentTelemetry(vehicleId, tripId, cfg);
@@ -66,7 +68,8 @@ public class TelemetrySseController {
             @RequestParam(required = false) UUID tripId,
             @RequestParam(required = false) String eventType,
             @RequestParam(required = false) String severity,
-            @RequestParam(defaultValue = "5m") String duration) {
+            @RequestParam(defaultValue = "5m") String duration,
+            @RequestParam String token) {
 
         DurationConfig cfg = DurationConfig.from(duration);
         List<EventMessage> snapshot = loadRecentEvents(vehicleId, tripId,
