@@ -5,10 +5,15 @@ import { DeterministicAlert } from '../../models/insight/deterministic-alert.mod
 import { PaginatedResponse } from '../../responses/paginated-response.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { SseService } from '../sse/sse.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class InsightService {
+
   private readonly _httpClient = inject(HttpClient);
+  private readonly _sseService = inject(SseService);
+  private readonly _authService = inject(AuthService);
   private readonly _eventsUrl = `${environment.apiBaseUrl}/telemetry/events`;
 
   private readonly aiInsights: AiInsight[] = [
@@ -47,5 +52,9 @@ export class InsightService {
     from.setDate(to.getDate() - 30);
 
     return this._httpClient.get<DeterministicAlert[]>(`${this._eventsUrl}?from=${from.toISOString()}&to=${to.toISOString()}`);
+  }
+
+  streamEvents(): Observable<any> {
+    return this._sseService.connect<any>(`${this._eventsUrl}/sse?token=${this._authService.getAccessToken()}`);
   }
 }

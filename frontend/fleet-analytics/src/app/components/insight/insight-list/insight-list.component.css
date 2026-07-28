@@ -218,6 +218,19 @@
     font-weight: 500;
 }
 
+.new-alert {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #1f63f2;
+}
+
+.alert-timestamp {
+    font-size: .78rem;
+    color: #6f7785;
+}
+
 @media (max-width: 720px) {
     .insight-grid {
         grid-template-columns: 1fr;

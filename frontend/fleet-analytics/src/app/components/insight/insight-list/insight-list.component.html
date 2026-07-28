@@ -60,7 +60,12 @@
                   <h3>{{ alert.eventType | alertTypeLabel }}</h3>
                   <span class="severity-badge">{{ alert.severity | alertSeverityLabel }}</span>
                 </div>
-                <time>{{ alert.timestamp | date:'dd/MM/yyyy, HH:mm' }}</time>
+                <div class="alert-timestamp">
+                  {{ alert.timestamp | date:'dd/MM/yyyy, HH:mm' }}
+                  @if (alert.isNew) {
+                    <div class="new-alert"></div>
+                  }
+                </div>
               </div>
               <p>{{ alert.message }}</p>
               <div class="alert-meta">

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,6 +9,7 @@ import { InsightService } from '../../../services/insight/insight.service';
 import { getPtBrPaginatorIntl } from '../../../shared/config/paginator/paginator-intl-pt-br';
 import { AlertSeverityLabelPipe } from '../../../shared/pipes/alert-severity-label.pipe';
 import { AlertTypeLabelPipe } from '../../../shared/pipes/alert-type-label.pipe';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-insight-list',
@@ -25,7 +26,8 @@ import { AlertTypeLabelPipe } from '../../../shared/pipes/alert-type-label.pipe'
   styleUrl: './insight-list.component.css'
 })
 export class InsightListComponent implements OnInit {
-  private readonly insightService = inject(InsightService);
+  private readonly _insightService = inject(InsightService);
+  private destroyRef = inject(DestroyRef);
 
   aiInsights: AiInsight[] = [];
   alerts: DeterministicAlert[] = [];
@@ -36,6 +38,7 @@ export class InsightListComponent implements OnInit {
   ngOnInit(): void {
     this.loadAiInsights();
     this.loadAlerts();
+    this.getNewEvents();
   }
 
   insightIcon(type: AiInsightType): string {
@@ -52,9 +55,9 @@ export class InsightListComponent implements OnInit {
 
   private loadAiInsights(): void {
     this.isLoadingInsights = true;
-    this.insightService.getAiInsights().subscribe({
+    this._insightService.getAiInsights().subscribe({
       next: (insights) => { 
-        this.aiInsights = insights; 
+        this.aiInsights = insights;
         this.isLoadingInsights = false; 
       },
       error: () => { 
@@ -65,9 +68,10 @@ export class InsightListComponent implements OnInit {
 
   private loadAlerts(): void {
     this.isLoadingAlerts = true;
-    this.insightService.getDeterministicAlerts().subscribe({
+    this._insightService.getDeterministicAlerts().subscribe({
       next: (response) => { 
         this.alerts = response;
+        console.log(this.alerts);
         this.isLoadingAlerts = false; 
       },
       error: () => { 
@@ -78,5 +82,20 @@ export class InsightListComponent implements OnInit {
 
   updateLimit(): void {
     this.currentLimit += 5;
+  }
+
+  private getNewEvents(): void {
+    this._insightService.streamEvents()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (event) => {
+          const newEvent = event as DeterministicAlert;
+          newEvent.isNew = true;
+          this.alerts.unshift(newEvent);
+        },
+        error: (error) => {
+          console.error('Error streaming events:', error);
+        }
+      });
   }
 }

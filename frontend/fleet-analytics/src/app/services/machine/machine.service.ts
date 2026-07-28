@@ -17,9 +17,9 @@ export class MachineService {
 
   private readonly _httpClient: HttpClient = inject(HttpClient);
   private readonly _sseService = inject(SseService);
+  private readonly _authService = inject(AuthService);
   private readonly _vehiclesUrl = `${environment.apiBaseUrl}/vehicles`;
   private readonly _vehicleTelemetryUrl = `${environment.apiBaseUrl}/telemetry/vehicle-data`;
-  private readonly _authService = inject(AuthService);
 
   constructor() { }
   

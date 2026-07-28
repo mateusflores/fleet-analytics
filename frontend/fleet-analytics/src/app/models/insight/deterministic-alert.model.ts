@@ -5,4 +5,5 @@ export interface DeterministicAlert {
   eventType: string;
   severity: string;
   message: string;
+  isNew: boolean;
 }
