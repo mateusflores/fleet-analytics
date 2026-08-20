@@ -59,7 +59,7 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log("entrou aqui")
+    console.log(changes)
     if (this.newData) {
       switch (this.metric) {
         case 'rpm':
@@ -98,6 +98,12 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
       this.chartSeries.set([
         { name: 'Média', type: 'line', data: this.chartData }
       ]);
+    }
+    if (changes['periodStart'] && 
+      !changes['periodStart'].firstChange && 
+      changes['periodStart'].currentValue !== changes['periodStart'].previousValue && 
+      changes['periodStart'].previousValue !== undefined) {
+      this.loadData();
     }
   }
 
