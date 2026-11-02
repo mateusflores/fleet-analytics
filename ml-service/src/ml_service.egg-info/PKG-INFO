@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: ml-service
+Version: 0.1.0
+Summary: Decodificação J1939 e modelos de ML para insights de frota (TCC UNESP)
+Requires-Python: >=3.12
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pyarrow
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"

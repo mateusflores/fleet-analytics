@@ -41,7 +41,6 @@ SIGNALS: tuple[Signal, ...] = (
     Signal("gear", 61445, 4, 1, 1, -125, spn=523),
     # ET1 - 65262 (0xFEEE)
     Signal("coolant_c", 65262, 1, 1, 1, -40, spn=110),
-    Signal("oil_c", 65262, 3, 2, 0.03125, -273, spn=175),
     # EFL/P1 - 65263 (0xFEEF)
     Signal("oil_kpa", 65263, 4, 1, 4, spn=100),
     # CCVS - 65265 (0xFEF1)
