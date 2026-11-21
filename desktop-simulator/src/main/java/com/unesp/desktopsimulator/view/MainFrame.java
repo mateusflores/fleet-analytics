@@ -1,6 +1,7 @@
 package com.unesp.desktopsimulator.view;
 
 import com.unesp.desktopsimulator.app.services.client.RestApiClient;
+import com.unesp.desktopsimulator.app.services.client.SessionExpiredException;
 import com.unesp.desktopsimulator.app.services.client.dto.ApiTripSummary;
 import com.unesp.desktopsimulator.app.services.simulator.SimulationState;
 import com.unesp.desktopsimulator.app.services.simulator.SimulatorRegistry;
@@ -159,8 +160,7 @@ public class MainFrame extends JFrame {
                     get();
                     updateStatus();
                 } catch (Exception e) {
-                    String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                    ErrorDialog.show(MainFrame.this, "Refresh failed", msg);
+                    showError("Refresh failed", e);
                 } finally {
                     setEnabled(true);
                 }
@@ -213,8 +213,7 @@ public class MainFrame extends JFrame {
                     registry.start(vehicle, driver, tripId);
                     updateStatus();
                 } catch (Exception e) {
-                    String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                    ErrorDialog.show(MainFrame.this, "Failed to start trip", msg);
+                    showError("Failed to start trip", e);
                 } finally {
                     setEnabled(true);
                 }
@@ -252,20 +251,20 @@ public class MainFrame extends JFrame {
             new SwingWorker<ApiTripSummary, Void>() {
                 @Override
                 protected ApiTripSummary doInBackground() throws Exception {
-                    return apiClient.findActiveTripByVehicle(vehicleId);
+                    ApiTripSummary trip = apiClient.findActiveTripByVehicle(vehicleId);
+                    apiClient.endTrip(trip.id());
+                    return trip;
                 }
 
                 @Override
                 protected void done() {
                     try {
                         ApiTripSummary trip = get();
-                        apiClient.endTrip(trip.id());
                         busyVehicleIds.remove(vehicleId);
                         busyDriverIds.remove(trip.driverId());
                         updateStatus();
                     } catch (Exception e) {
-                        String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                        ErrorDialog.show(MainFrame.this, "Failed to end trip", msg);
+                        showError("Failed to end trip", e);
                     } finally {
                         setEnabled(true);
                     }
@@ -289,11 +288,21 @@ public class MainFrame extends JFrame {
                 try {
                     get();
                 } catch (Exception e) {
-                    String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                    ErrorDialog.show(MainFrame.this, "Failed to end trip", msg);
+                    showError("Failed to end trip", e);
                 }
             }
         }.execute();
+    }
+
+    private void showError(String title, Exception e) {
+        Throwable cause = e.getCause() != null ? e.getCause() : e;
+        if (cause instanceof SessionExpiredException) {
+            ErrorDialog.show(this, "Session expired",
+                    "Your session has expired. Running simulations keep publishing via MQTT, "
+                            + "but restart the application and login again to manage trips.");
+            return;
+        }
+        ErrorDialog.show(this, title, cause.getMessage());
     }
 
     private void handleInjectFault() {

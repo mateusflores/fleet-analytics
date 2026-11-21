@@ -13,13 +13,19 @@ import com.unesp.desktopsimulator.model.Vehicle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,16 +33,26 @@ public class RestApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(RestApiClient.class);
     private static final int PAGE_SIZE = 1000;
+    /** Renova o access token um pouco antes de expirar, para não depender só do 401. */
+    private static final Duration REFRESH_MARGIN = Duration.ofSeconds(60);
 
     private final RestClient restClient;
     private final ObjectMapper mapper;
+    private final Clock clock;
+    private final Object tokenLock = new Object();
 
-    private String accessToken;
-    private String refreshToken;
+    private volatile String accessToken;
+    private volatile String refreshToken;
+    private volatile Instant accessExpiresAt = Instant.MIN;
 
     public RestApiClient(RestClient restClient, ObjectMapper mapper) {
+        this(restClient, mapper, Clock.systemUTC());
+    }
+
+    RestApiClient(RestClient restClient, ObjectMapper mapper, Clock clock) {
         this.restClient = restClient;
         this.mapper = mapper;
+        this.clock = clock;
     }
 
     public void login(String username, String password) {
@@ -48,8 +64,7 @@ public class RestApiClient {
                 .retrieve()
                 .body(ApiLoginResponse.class);
 
-        this.accessToken = response.accessToken();
-        this.refreshToken = response.refreshToken();
+        storeTokens(response);
         log.info("Logged in as user {}", response.userId());
     }
 
@@ -57,22 +72,80 @@ public class RestApiClient {
         return accessToken != null && !accessToken.isBlank();
     }
 
+    /**
+     * Troca o refresh token por um novo par de tokens. A API revoga o refresh token usado (rotação),
+     * por isso a troca é serializada: chamadas concorrentes que chegam com um token já renovado não refazem a troca.
+     */
     public void refreshToken() {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new IllegalStateException("No refresh token available - please login first");
+        refreshIfStale(accessToken);
+    }
+
+    private void refreshIfStale(String staleAccessToken) {
+        synchronized (tokenLock) {
+            if (accessToken != null && !accessToken.equals(staleAccessToken) && !isExpiringSoon()) {
+                return; // outra thread já renovou
+            }
+            if (refreshToken == null || refreshToken.isBlank()) {
+                throw new SessionExpiredException("No refresh token available - please login again");
+            }
+            ApiLoginResponse response;
+            try {
+                response = restClient.post()
+                        .uri("/api/v1/auth/refresh")
+                        .body(new ApiRefreshTokenRequest(refreshToken))
+                        .retrieve()
+                        .body(ApiLoginResponse.class);
+            } catch (RestClientResponseException e) {
+                if (e.getStatusCode().is4xxClientError() || e.getStatusCode().value() == 500) {
+                    clearTokens();
+                    throw new SessionExpiredException("Session expired - please login again", e);
+                }
+                throw e;
+            }
+            if (response == null || response.accessToken() == null) {
+                clearTokens();
+                throw new SessionExpiredException("Session expired - please login again");
+            }
+            storeTokens(response);
+            log.debug("Token refreshed; expires at {}", accessExpiresAt);
         }
+    }
 
-        ApiRefreshTokenRequest request = new ApiRefreshTokenRequest(refreshToken);
+    private boolean isExpiringSoon() {
+        return !clock.instant().plus(REFRESH_MARGIN).isBefore(accessExpiresAt);
+    }
 
-        ApiLoginResponse response = restClient.post()
-                .uri("/api/v1/auth/refresh")
-                .body(request)
-                .retrieve()
-                .body(ApiLoginResponse.class);
-
+    private void storeTokens(ApiLoginResponse response) {
         this.accessToken = response.accessToken();
         this.refreshToken = response.refreshToken();
-        log.debug("Token refreshed successfully");
+        long ttl = response.expiresIn() > 0 ? response.expiresIn() : 0;
+        this.accessExpiresAt = clock.instant().plusSeconds(ttl);
+    }
+
+    private void clearTokens() {
+        accessToken = null;
+        refreshToken = null;
+        accessExpiresAt = Instant.MIN;
+    }
+
+    /**
+     * Executa uma chamada autenticada: renova o token antes se estiver perto de expirar
+     * e, se a API ainda responder 401, renova e tenta mais uma vez.
+     */
+    private <T> T authorized(Function<String, T> call) {
+        requireAuth();
+        String token = accessToken;
+        if (isExpiringSoon()) {
+            refreshIfStale(token);
+            token = accessToken;
+        }
+        try {
+            return call.apply("Bearer " + token);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            log.info("Access token rejected, refreshing and retrying");
+            refreshIfStale(token);
+            return call.apply("Bearer " + accessToken);
+        }
     }
 
     public void logout() {
@@ -82,20 +155,18 @@ public class RestApiClient {
             ApiLogoutRequest request = new ApiLogoutRequest(refreshToken);
             restClient.post()
                     .uri("/api/v1/auth/logout")
-                    .header("Authorization", bearer())
+                    .header("Authorization", "Bearer " + accessToken)
                     .body(request)
                     .retrieve()
                     .toBodilessEntity();
         } catch (Exception e) {
             log.warn("Logout failed: {}", e.getMessage());
         } finally {
-            accessToken = null;
-            refreshToken = null;
+            clearTokens();
         }
     }
 
     public List<Driver> fetchDrivers() {
-        requireAuth();
         List<ApiUserSummary> users = fetchPage(
                 "/api/v1/users/search?roleName=DRIVER&size=" + PAGE_SIZE,
                 ApiUserSummary.class
@@ -106,7 +177,6 @@ public class RestApiClient {
     }
 
     public List<Vehicle> fetchVehicles() {
-        requireAuth();
         List<ApiVehicleSummary> vehicles = fetchPage(
                 "/api/v1/vehicles?size=" + PAGE_SIZE,
                 ApiVehicleSummary.class
@@ -130,12 +200,11 @@ public class RestApiClient {
     }
 
     public ApiTripSummary findActiveTripByVehicle(UUID vehicleId) {
-        requireAuth();
-        ApiTripSummary response = restClient.get()
+        ApiTripSummary response = authorized(auth -> restClient.get()
                 .uri("/api/v1/trips/vehicle/{vehicleId}/active", vehicleId)
-                .header("Authorization", bearer())
+                .header("Authorization", auth)
                 .retrieve()
-                .body(ApiTripSummary.class);
+                .body(ApiTripSummary.class));
         if (response == null) {
             throw new IllegalStateException("No active trip found for vehicle " + vehicleId);
         }
@@ -143,7 +212,6 @@ public class RestApiClient {
     }
 
     private List<ApiTripSummary> findOngoingTrips() {
-        requireAuth();
         return fetchPage(
                 "/api/v1/trips/search?size=" + PAGE_SIZE + "&ongoingTrip=true",
                 ApiTripSummary.class
@@ -151,15 +219,14 @@ public class RestApiClient {
     }
 
     public UUID startTrip(UUID driverId, UUID vehicleId) {
-        requireAuth();
         ApiCreateTripRequest request = new ApiCreateTripRequest(driverId, vehicleId);
 
-        ApiTripSummary response = restClient.post()
+        ApiTripSummary response = authorized(auth -> restClient.post()
                 .uri("/api/v1/trips")
-                .header("Authorization", bearer())
+                .header("Authorization", auth)
                 .body(request)
                 .retrieve()
-                .body(ApiTripSummary.class);
+                .body(ApiTripSummary.class));
 
         if (response == null) {
             throw new IllegalStateException("Failed to start trip: empty response");
@@ -170,23 +237,21 @@ public class RestApiClient {
     }
 
     public void endTrip(UUID tripId) {
-        requireAuth();
-        restClient.patch()
+        authorized(auth -> restClient.patch()
                 .uri("/api/v1/trips/{id}/end", tripId)
-                .header("Authorization", bearer())
+                .header("Authorization", auth)
                 .retrieve()
-                .toBodilessEntity();
+                .toBodilessEntity());
         log.info("Trip ended: id={}", tripId);
     }
 
     private <T> List<T> fetchPage(String uri, Class<T> clazz) {
+        String json = authorized(auth -> restClient.get()
+                .uri(uri)
+                .header("Authorization", auth)
+                .retrieve()
+                .body(String.class));
         try {
-            String json = restClient.get()
-                    .uri(uri)
-                    .header("Authorization", bearer())
-                    .retrieve()
-                    .body(String.class);
-
             JsonNode root = mapper.readTree(json);
             JsonNode content = root.get("content");
             return mapper.readerForListOf(clazz).readValue(content);
@@ -212,13 +277,9 @@ public class RestApiClient {
                 .build();
     }
 
-    private String bearer() {
-        return "Bearer " + accessToken;
-    }
-
     private void requireAuth() {
         if (!isAuthenticated()) {
-            throw new IllegalStateException("Not authenticated - call login() first");
+            throw new SessionExpiredException("Not authenticated - please login again");
         }
     }
 
