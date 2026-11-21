@@ -11,10 +11,10 @@ import java.util.Set;
 @Service
 public class FaultInjector {
 
-    private static final double OVERHEAT_DRIFT_C = 0.3;
-    private static final double BATTERY_DRAIN_V = 0.01;
-    private static final double FUEL_LEAK_PCT = 0.02;
-    private static final double GPS_DRIFT_DEG = 0.0001;
+    private static final double OVERHEAT_DRIFT_C = 0.6;
+    private static final double BATTERY_DRAIN_V = 0.02;
+    private static final double FUEL_LEAK_PCT = 0.04;
+    private static final double GPS_DRIFT_DEG = 0.0002;
     private static final int IDLE_RPM = 700;
     private static final int MAX_RPM = 4000;
 

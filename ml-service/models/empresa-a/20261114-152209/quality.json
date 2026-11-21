@@ -1,0 +1,142 @@
+{
+ "errors": [],
+ "warnings": [
+  "[kenworth-t270-px7] estado 'parado (<1 km/h)' pouco representado (4.2% do tempo): mais falsos alarmes são esperados nele"
+ ],
+ "groups": {
+  "kenworth-t270-px7": {
+   "vehicles": [
+    "t270-01"
+   ],
+   "hours_total": 16.07,
+   "hours_engine_on": 15.57,
+   "segments": 8,
+   "period": [
+    "2020-07-13 17:11:11+00:00",
+    "2020-07-14 17:53:01+00:00"
+   ],
+   "usable_signals": [
+    "rpm",
+    "speed_kmh",
+    "load_pct",
+    "engine_torque_pct",
+    "pedal_pct",
+    "gear",
+    "coolant_c",
+    "oil_kpa",
+    "fuel_rate_lph",
+    "boost_kpa",
+    "intake_c",
+    "battery_v",
+    "fuel_level_pct",
+    "odometer_km"
+   ],
+   "signals": {
+    "rpm": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 13.72,
+     "mean": 1941.1,
+     "max": 2237.83
+    },
+    "speed_kmh": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 95.1,
+     "max": 108.55
+    },
+    "load_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 51.19,
+     "max": 100.0
+    },
+    "engine_torque_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 42.49,
+     "max": 93.0
+    },
+    "pedal_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 13.92,
+     "max": 100.0
+    },
+    "gear": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": -1.0,
+     "mean": 4.67,
+     "max": 5.0
+    },
+    "coolant_c": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 27.0,
+     "mean": 89.39,
+     "max": 95.0
+    },
+    "oil_kpa": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 340.09,
+     "max": 402.0
+    },
+    "fuel_rate_lph": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 17.75,
+     "max": 46.91
+    },
+    "boost_kpa": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 67.46,
+     "max": 187.0
+    },
+    "intake_c": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 30.0,
+     "mean": 52.71,
+     "max": 68.0
+    },
+    "battery_v": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 11.3,
+     "mean": 13.99,
+     "max": 14.2
+    },
+    "fuel_level_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 2.8,
+     "mean": 64.33,
+     "max": 100.0
+    },
+    "odometer_km": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 424997.5,
+     "mean": 425723.49,
+     "max": 426477.62
+    }
+   },
+   "operating_states_pct": {
+    "parado (<1 km/h)": 4.2,
+    "transição": 5.8,
+    "rodovia (>=80 km/h)": 90.0
+   }
+  }
+ },
+ "ok": true
+}

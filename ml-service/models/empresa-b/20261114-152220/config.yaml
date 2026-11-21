@@ -1,0 +1,22 @@
+# Empresa B — frota sintética: porte offline do desktop-simulator
+# Gerar os dados: python -m ml_service.synthetic.simulator_fleet --out data/synthetic/empresa-b.csv
+company: empresa-b
+sources:
+  - adapter: csv
+    path: data/synthetic/empresa-b.csv
+    vehicle_group: simulador-leve
+    ts_column: timestamp
+    ts_unit: s
+    vehicle_id_column: vehicleId
+    columns:
+      rpm: engineRpm
+      speed_kmh: speedKmh
+      coolant_c: engineTempC
+      battery_v: batteryVoltage
+      fuel_level_pct: fuelLevelPct
+      odometer_km: odometerKm
+window: {size_s: 60, stride_s: 10}
+test_frac: 0.25
+target_false_alarm_rate: 0.01
+faults: {duration_s: 300, period_s: 900, severities: [0.25, 0.5, 1.0]}
+seed: 42

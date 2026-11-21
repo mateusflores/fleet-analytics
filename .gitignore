@@ -24,7 +24,7 @@ hs_err_pid*
 replay_pid*
 
 # ml-service / datasets
-can-logs/
+/data/
 ml-service/.venv/
 ml-service/data/
 __pycache__/

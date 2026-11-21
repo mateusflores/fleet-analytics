@@ -7,10 +7,15 @@ dependencies = [
     "numpy",
     "pandas",
     "pyarrow",
+    "pyyaml",
+    "scikit-learn",
+    "lightgbm",
+    "joblib",
+    "pika",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "matplotlib", "nbformat", "nbconvert", "ipykernel"]
 
 [build-system]
 requires = ["setuptools>=68"]

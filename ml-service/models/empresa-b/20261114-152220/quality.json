@@ -1,0 +1,80 @@
+{
+ "errors": [],
+ "warnings": [
+  "[simulador-leve] estado 'parado (<1 km/h)' pouco representado (3.7% do tempo): mais falsos alarmes são esperados nele"
+ ],
+ "groups": {
+  "simulador-leve": {
+   "vehicles": [
+    "sim-01",
+    "sim-02",
+    "sim-03"
+   ],
+   "hours_total": 24.0,
+   "hours_engine_on": 24.0,
+   "segments": 13,
+   "period": [
+    "2026-10-01 08:00:00+00:00",
+    "2026-10-02 02:16:53+00:00"
+   ],
+   "usable_signals": [
+    "rpm",
+    "speed_kmh",
+    "coolant_c",
+    "battery_v",
+    "fuel_level_pct",
+    "odometer_km"
+   ],
+   "signals": {
+    "rpm": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 700.0,
+     "mean": 3168.57,
+     "max": 3996.0
+    },
+    "speed_kmh": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 61.73,
+     "max": 82.96
+    },
+    "coolant_c": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 83.98,
+     "mean": 111.17,
+     "max": 120.83
+    },
+    "battery_v": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 13.34,
+     "mean": 13.8,
+     "max": 14.21
+    },
+    "fuel_level_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 8.0,
+     "mean": 55.04,
+     "max": 100.0
+    },
+    "odometer_km": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 19069.53,
+     "mean": 61387.78,
+     "max": 98615.26
+    }
+   },
+   "operating_states_pct": {
+    "parado (<1 km/h)": 3.7,
+    "transição": 88.8,
+    "rodovia (>=80 km/h)": 7.5
+   }
+  }
+ },
+ "ok": true
+}

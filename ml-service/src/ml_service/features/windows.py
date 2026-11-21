@@ -1,107 +1,117 @@
-"""Janelas deslizantes e features estatísticas + split por segmento.
+"""Janelas deslizantes e features estatísticas, geradas a partir dos sinais disponíveis.
 
-Split (decidido após a EDA, por segmento, sem vazamento temporal):
-- treino/validação: CSU090BJ (todo) + cross-country segmentos 0 e 2
-  (validação = últimos 15% de cada segmento de treino, separados por 1 janela de folga)
-- teste: cross-country segmento 7 + segmentos curtos (1, 3, 4, 5, 6)
-
-Uso:  python -m ml_service.features.windows
+Por sinal (driver/response): média, desvio, mínimo, máximo e inclinação na janela.
+Sinais acumulados (ex. nível de combustível): só a inclinação, ignorando saltos de reabastecimento.
+Derivadas: fração parado, aceleração média absoluta, variação média de RPM e tempo desde a partida do motor.
+Janelas com motor desligado ou com valores ausentes são descartadas.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
+from numpy.lib.stride_tricks import sliding_window_view
 
-WINDOW = 60  # segundos
-STRIDE = 10
-VAL_FRACTION = 0.15
+from ml_service.schema import by_role
 
-CORE = ["rpm", "engine_torque_pct", "pedal_pct", "load_pct", "speed_kmh", "coolant_c",
-        "oil_kpa", "fuel_rate_lph", "boost_kpa", "intake_c", "battery_v"]
-SLOPE_SIGNALS = ["rpm", "load_pct", "speed_kmh", "coolant_c", "oil_kpa", "fuel_rate_lph",
-                 "boost_kpa", "intake_c", "battery_v"]
-
-TRAIN_SOURCES = {"bj": None, "cc": {0, 2}}  # None = todos os segmentos
-CC_TEST_SEGMENTS = {1, 3, 4, 5, 6, 7}
-
-DATA = Path("data")
+WINDOW_META = ["vehicle_id", "vehicle_group", "segment", "start_idx", "ts_start"]
+CONTEXT_FEATURES = ["idle_frac", "accel_abs_mean", "rpm_diff_abs_mean", "engine_on_s"]
+ENGINE_ON_S_CAP = 3600.0
+REFUEL_JUMP = 2.0  # salto por segundo (em unidades do sinal) tratado como reabastecimento
+STATS = ("mean", "std", "min", "max", "slope")
 
 
-def clean(df: pd.DataFrame) -> pd.DataFrame:
-    """0% de combustível é artefato de inicialização do SA 0x31: trata como ausente."""
-    df = df.copy()
-    zero = df["fuel_level_pct"] == 0
-    df.loc[zero, "fuel_level_pct"] = np.nan
-    df["fuel_level_pct"] = (df.groupby("segment")["fuel_level_pct"]
-                            .transform(lambda s: s.bfill(limit=60).ffill(limit=60)))
+def engine_on_seconds(engine_on: np.ndarray) -> np.ndarray:
+    """Segundos desde que o motor foi ligado (0 na primeira amostra ligada; reinicia a cada desligamento)."""
+    idx = np.arange(len(engine_on))
+    last_off = np.maximum.accumulate(np.where(~engine_on, idx, -1))
+    return (idx - last_off - 1).clip(min=0).astype(float)
+
+
+def add_engine_on_s(df: pd.DataFrame) -> pd.DataFrame:
+    """Adiciona a coluna `engine_on_s` por (veículo, segmento). Requer linhas em ordem de tempo."""
+    df = df.sort_values(["vehicle_id", "segment", "ts"]).reset_index(drop=True)
+    df["engine_on_s"] = np.concatenate([engine_on_seconds(g.to_numpy(dtype=bool))
+                                        for _, g in df.groupby(["vehicle_id", "segment"], sort=False)["engine_on"]])
     return df
 
 
-def window_features(arr: np.ndarray, cols: list[str]) -> dict[str, float]:
-    """Features de uma janela (n x len(cols)) sem NaN."""
-    idx = {c: i for i, c in enumerate(cols)}
-    t = np.arange(arr.shape[0], dtype=float)
-    t -= t.mean()
-    out: dict[str, float] = {}
-    for c in CORE:
-        x = arr[:, idx[c]]
-        out[f"{c}_mean"], out[f"{c}_std"] = x.mean(), x.std()
-        out[f"{c}_min"], out[f"{c}_max"] = x.min(), x.max()
-        if c in SLOPE_SIGNALS:
-            out[f"{c}_slope"] = float((t * (x - x.mean())).sum() / (t * t).sum())
-    speed, fuel = arr[:, idx["speed_kmh"]], arr[:, idx["fuel_rate_lph"]]
-    out["idle_frac"] = float((speed < 1).mean())
-    out["accel_abs_mean"] = float(np.abs(np.diff(speed)).mean())
-    out["rpm_diff_abs_mean"] = float(np.abs(np.diff(arr[:, idx["rpm"]])).mean())
-    out["fuel_economy_kmpl"] = float(speed.mean() / fuel.mean()) if fuel.mean() > 0.5 else np.nan
-    out["gear_mean"] = float(arr[:, idx["gear"]].mean())
-    return out
+def segment_windows(seg: pd.DataFrame, signals: list[str], size: int, stride: int) -> pd.DataFrame:
+    """Features das janelas válidas de um trecho contínuo a 1 Hz (índice 0..n-1)."""
+    stat, cum = by_role(signals, "driver", "response"), by_role(signals, "cumulative")
+    cols = [*stat, *cum]
+    n = len(seg)
+    if n < size or not cols:
+        return pd.DataFrame()
+    arr = np.array(seg[cols], dtype=float)  # cópia: é modificado abaixo
+    for i, s in enumerate(cols):  # reabastecimento: remove saltos para cima em sinais acumulados
+        if s in cum:
+            jump = np.diff(arr[:, i], prepend=arr[0, i])
+            arr[:, i] -= np.cumsum(np.where(jump > REFUEL_JUMP, jump, 0.0))
+    view = sliding_window_view(arr, size, axis=0)[::stride]  # (m, k, size)
+    on = sliding_window_view(seg["engine_on"].to_numpy(dtype=bool), size)[::stride].all(axis=1)
+    valid = on & ~np.isnan(view).any(axis=(1, 2))
+    view = view[valid]
+    t = np.arange(size, dtype=float) - (size - 1) / 2
+    tt = float((t * t).sum())
+    starts = np.arange(0, n - size + 1, stride)[valid]
+    run = (seg["engine_on_s"].to_numpy(dtype=float) if "engine_on_s" in seg.columns
+           else engine_on_seconds(seg["engine_on"].to_numpy(dtype=bool)))
+    out: dict[str, np.ndarray] = {"start_idx": starts, "engine_on_s": np.minimum(run[starts], ENGINE_ON_S_CAP)}
+    for i, s in enumerate(cols):
+        x = view[:, i, :]
+        if s in stat:
+            out[f"{s}_mean"], out[f"{s}_std"] = x.mean(axis=1), x.std(axis=1)
+            out[f"{s}_min"], out[f"{s}_max"] = x.min(axis=1), x.max(axis=1)
+        out[f"{s}_slope"] = (x * t).sum(axis=1) / tt
+    if "speed_kmh" in stat:
+        v = view[:, cols.index("speed_kmh"), :]
+        out["idle_frac"] = (v < 1).mean(axis=1)
+        out["accel_abs_mean"] = np.abs(np.diff(v, axis=1)).mean(axis=1)
+    if "rpm" in stat:
+        out["rpm_diff_abs_mean"] = np.abs(np.diff(view[:, cols.index("rpm"), :], axis=1)).mean(axis=1)
+    return pd.DataFrame(out)
 
 
-def segment_windows(seg: pd.DataFrame, source: str, seg_id: int) -> pd.DataFrame:
-    cols = [*CORE, "gear"]
-    arr = seg[cols].to_numpy(dtype=float)
-    on = seg["engine_on"].to_numpy()
-    ts = seg["ts"].to_numpy()
-    rows = []
-    for start in range(0, len(seg) - WINDOW + 1, STRIDE):
-        w = arr[start:start + WINDOW]
-        if not on[start:start + WINDOW].all() or np.isnan(w).any():
+def compute_windows(df: pd.DataFrame, signals: list[str], size: int, stride: int) -> pd.DataFrame:
+    """Janelas de todos os (veículo, segmento) de uma tabela canônica."""
+    parts = []
+    for (vid, seg_id), g in df.groupby(["vehicle_id", "segment"], sort=True):
+        g = g.sort_values("ts").reset_index(drop=True)
+        w = segment_windows(g, signals, size, stride)
+        if w.empty:
             continue
-        row = {"source": source, "segment": seg_id, "ts_start": ts[start], "start_idx": start}
-        row.update(window_features(w, cols))
-        rows.append(row)
-    return pd.DataFrame(rows)
+        w.insert(0, "vehicle_id", vid)
+        w.insert(1, "vehicle_group", g["vehicle_group"].iloc[0])
+        w.insert(2, "segment", int(seg_id))
+        w["ts_start"] = g["ts"].to_numpy()[w["start_idx"].to_numpy()]
+        parts.append(w)
+    if not parts:
+        return pd.DataFrame(columns=WINDOW_META)
+    out = pd.concat(parts, ignore_index=True)
+    return out[[*WINDOW_META, *[c for c in out.columns if c not in WINDOW_META]]]
 
 
-def build_splits(processed: Path = DATA / "processed", out: Path = DATA / "features") -> dict[str, pd.DataFrame]:
-    inputs = {
-        "bj": clean(pd.read_parquet(processed / "CSU090BJ.parquet")),
-        "cc": clean(pd.read_parquet(processed / "2014_KW_T270_cross_country_can_log.parquet")),
-    }
-    parts: dict[str, list[pd.DataFrame]] = {"train": [], "val": [], "test": []}
-    for source, df in inputs.items():
-        for seg_id, seg in df.groupby("segment"):
-            w = segment_windows(seg.reset_index(drop=True), source, int(seg_id))
-            if w.empty:
-                continue
-            if source == "cc" and seg_id in CC_TEST_SEGMENTS:
-                parts["test"].append(w)
-            elif TRAIN_SOURCES[source] is None or seg_id in TRAIN_SOURCES[source]:
-                n_val = int(len(w) * VAL_FRACTION)
-                gap = WINDOW // STRIDE  # descarta janelas que se sobrepõem ao treino
-                parts["train"].append(w.iloc[: len(w) - n_val - gap])
-                parts["val"].append(w.iloc[len(w) - n_val:])
-    out.mkdir(parents=True, exist_ok=True)
-    result = {k: pd.concat(v, ignore_index=True) for k, v in parts.items()}
-    for k, d in result.items():
-        d.to_parquet(out / f"{k}.parquet", index=False)
-        print(f"{k:5s}: {len(d):6d} janelas  ({d.groupby(['source','segment']).size().to_dict()})")
-    return result
+def feature_columns(w: pd.DataFrame) -> list[str]:
+    return [c for c in w.columns if c not in WINDOW_META and c != "split"]
 
 
-if __name__ == "__main__":
-    build_splits()
+def assign_split(w: pd.DataFrame, test_segments: dict[str, set[int]], test_frac: float, gap: int) -> pd.Series:
+    """'train' | 'test' | 'gap' por janela, sem vazamento temporal.
+
+    - veículo com `test_segments`: esses segmentos inteiros são teste;
+    - caso contrário: o trecho final (`test_frac`) das janelas do veículo, em ordem cronológica, é teste,
+      e `gap` janelas na fronteira são descartadas (elas se sobrepõem ao treino).
+    """
+    split = pd.Series("train", index=w.index)
+    for vid, g in w.groupby("vehicle_id", sort=False):
+        if vid in test_segments:
+            split[g.index[g["segment"].isin(test_segments[vid])]] = "test"
+            continue
+        idx = g.sort_values(["segment", "start_idx"]).index
+        n_test = int(len(idx) * test_frac)
+        if n_test == 0:
+            continue
+        split[idx[len(idx) - n_test:]] = "test"
+        split[idx[max(0, len(idx) - n_test - gap): len(idx) - n_test]] = "gap"
+    return split

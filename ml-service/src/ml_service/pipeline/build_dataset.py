@@ -67,15 +67,16 @@ def aggregate_seconds(path: str | Path) -> pd.DataFrame:
     return df[["sec", *SIGNAL_NAMES]]
 
 
-def resample_segments(df: pd.DataFrame) -> pd.DataFrame:
+def resample_segments(df: pd.DataFrame, signals: list[str] | None = None) -> pd.DataFrame:
     """Passos 2 e 3: segmentos sem lacunas grandes, grade de 1 s, ffill limitado."""
+    signals = SIGNAL_NAMES if signals is None else signals
     df = df.sort_values("sec").drop_duplicates("sec").reset_index(drop=True)
     df["segment"] = (df["sec"].diff() > GAP_SECONDS).cumsum()
     parts = []
     for seg, g in df.groupby("segment"):
         grid = pd.RangeIndex(g["sec"].min(), g["sec"].max() + 1, name="sec")
         g = g.set_index("sec").reindex(grid)
-        for name in SIGNAL_NAMES:
+        for name in signals:
             limit = SLOW_FFILL_LIMIT if name in SLOW_SIGNALS else DEFAULT_FFILL_LIMIT
             g[name] = g[name].ffill(limit=limit)
         g["segment"] = seg
@@ -83,7 +84,7 @@ def resample_segments(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.concat(parts, ignore_index=True)
     out["ts"] = pd.to_datetime(out["sec"], unit="s", utc=True)
     out["engine_on"] = (out["rpm"] > 0).fillna(False)
-    return out[["ts", "segment", "engine_on", *SIGNAL_NAMES]]
+    return out[["ts", "segment", "engine_on", *signals]]
 
 
 def build(path: str | Path, out_path: str | Path) -> pd.DataFrame:
