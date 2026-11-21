@@ -127,7 +127,8 @@ Semana de aperfeiçoamento (ordem sugerida): teste com API e frontend → sensib
 
 ```bash
 cd ml-service
-.venv/bin/python -m ml_service.synthetic.simulator_fleet --out data/synthetic/empresa-b.csv   # gera a frota sintética
+(cd ../desktop-simulator && ./mvnw -q compile exec:java -Dexec.mainClass=com.unesp.desktopsimulator.tools.DatasetGenerator \
+    -Dexec.args="--out ../ml-service/data/synthetic/empresa-b.csv --vehicles 3 --days 3 --seed 42")   # frota sintética (D31)
 .venv/bin/python -m ml_service.train --config configs/empresa-a.yaml                           # treina e gera o relatório
 .venv/bin/python -m ml_service.train --config configs/empresa-b.yaml
 .venv/bin/python -m ml_service.experiments.transfer --source configs/empresa-a.yaml --targets configs/t660.yaml configs/empresa-b.yaml

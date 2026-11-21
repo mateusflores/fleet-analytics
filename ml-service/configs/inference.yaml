@@ -9,4 +9,4 @@ cooldown_s: 300         # intervalo mínimo entre eventos do mesmo tipo para o m
 # A chave `default` (opcional) vale para veículos não listados.
 vehicles:
   "00000000-0000-0000-0000-00000000000a": {company: empresa-a, group: kenworth-t270-px7, assume_warm: true}
-  "00000000-0000-0000-0000-00000000000b": {company: empresa-b, group: simulador-leve, assume_warm: true}
+  "00000000-0000-0000-0000-00000000000b": {company: empresa-b, group: caminhao-medio-sim, assume_warm: true}

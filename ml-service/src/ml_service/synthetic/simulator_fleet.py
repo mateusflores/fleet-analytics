@@ -1,10 +1,10 @@
-"""Frota sintética (Empresa B): porte offline das equações do `desktop-simulator`.
+"""Frota sintética simples, usada como dado de teste rápido do pipeline (tests/).
 
-O simulador Java (TelemetryGenerator) só gera dados em tempo real; aqui as mesmas equações e constantes
-são executadas a 1 Hz sobre um perfil de velocidade gerado (urbano / rodovia / paradas), produzindo um
-histórico em CSV com os nomes de campo do simulador.
+Origem: porte das equações do antigo TelemetryGenerator do desktop-simulator. Desde 2026-11-21 os dados da
+Empresa B vêm do próprio simulador Java (modelo físico calibrado com o T270; ver configs/empresa-b.yaml e a
+decisão D31); este módulo ficou apenas como gerador leve e determinístico para os testes.
 
-Uso: python -m ml_service.synthetic.simulator_fleet --out data/synthetic/empresa-b.csv
+Uso: python -m ml_service.synthetic.simulator_fleet --out <arquivo.csv>
 """
 
 from __future__ import annotations

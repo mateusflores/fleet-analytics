@@ -1,0 +1,142 @@
+{
+ "errors": [],
+ "warnings": [],
+ "groups": {
+  "caminhao-medio-sim": {
+   "vehicles": [
+    "sim-01",
+    "sim-02",
+    "sim-03"
+   ],
+   "hours_total": 81.18,
+   "hours_engine_on": 81.18,
+   "segments": 33,
+   "period": [
+    "2026-11-02 09:26:59+00:00",
+    "2026-11-04 22:48:11+00:00"
+   ],
+   "usable_signals": [
+    "rpm",
+    "speed_kmh",
+    "load_pct",
+    "engine_torque_pct",
+    "pedal_pct",
+    "gear",
+    "coolant_c",
+    "oil_kpa",
+    "fuel_rate_lph",
+    "boost_kpa",
+    "intake_c",
+    "battery_v",
+    "fuel_level_pct",
+    "odometer_km"
+   ],
+   "signals": {
+    "rpm": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 467.0,
+     "mean": 1393.25,
+     "max": 2209.0
+    },
+    "speed_kmh": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 43.48,
+     "max": 93.0
+    },
+    "load_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 25.27,
+     "max": 100.0
+    },
+    "engine_torque_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": -8.0,
+     "mean": 22.97,
+     "max": 100.0
+    },
+    "pedal_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 21.96,
+     "max": 100.0
+    },
+    "gear": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 1.0,
+     "mean": 2.99,
+     "max": 5.0
+    },
+    "coolant_c": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 20.0,
+     "mean": 85.24,
+     "max": 95.0
+    },
+    "oil_kpa": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 124.0,
+     "mean": 297.63,
+     "max": 436.0
+    },
+    "fuel_rate_lph": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 10.59,
+     "max": 48.0
+    },
+    "boost_kpa": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 0.0,
+     "mean": 29.18,
+     "max": 156.0
+    },
+    "intake_c": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 29.0,
+     "mean": 45.08,
+     "max": 69.0
+    },
+    "battery_v": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 13.85,
+     "mean": 14.0,
+     "max": 14.15
+    },
+    "fuel_level_pct": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 20.0,
+     "mean": 61.35,
+     "max": 98.0
+    },
+    "odometer_km": {
+     "missing_pct": 0.0,
+     "out_of_range_pct": 0.0,
+     "min": 234265.76,
+     "mean": 234873.98,
+     "max": 235566.8
+    }
+   },
+   "operating_states_pct": {
+    "parado (<1 km/h)": 22.0,
+    "transição": 57.4,
+    "rodovia (>=80 km/h)": 20.6
+   }
+  }
+ },
+ "ok": true
+}

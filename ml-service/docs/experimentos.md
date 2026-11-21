@@ -87,7 +87,7 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
   quase determinístico; **não medem desempenho em veículo real**. (4) Modelos de `intake_c` e `battery_v` têm R²
   negativo no teste: não são previsíveis pelas condições de operação e funcionam só como faixa em torno da média.
 
-## E10 — X1: transferência entre frotas (2026-11-14)
+## E10 — X1: transferência entre frotas (2026-11-14; refeito em 2026-11-21, ver E12)
 - **Comando:** `python -m ml_service.experiments.transfer --source configs/empresa-a.yaml --targets configs/t660.yaml configs/empresa-b.yaml`
   (e o inverso com `--source configs/empresa-b.yaml`). Resultado em `reports/experiments/x1_transfer.json`.
 - Modelo treinado só com os sinais comuns às duas frotas; alarmes medidos em dados **normais**.
@@ -100,6 +100,10 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 | Empresa B | Kenworth T660 | 5 | 1,1% | **100%** (36 janelas) |
 
 - **Conclusão:** o modelo de uma frota trata a operação normal de outra como anômala em todas as janelas — sustenta D04.
+- **Refeito em 2026-11-21 com a nova Empresa B (E12, 13 sinais comuns):** A→B **61%** (25.084 janelas), B→A **87%**
+  (4.955), B→T660 100%; na própria frota 0,0% (A) e 0,4% (B). A transferência deixou de ser total porque o simulador
+  agora é calibrado com o próprio T270 — mesmo assim os alarmes ficam 2 ordens de grandeza acima da própria frota.
+  Em A→B os alarmes vêm principalmente da pressão do óleo (42%); em B→A, de turbo (64%) e consumo (46%).
 - **Ressalvas:** o T660 tem só 412 s (36 janelas) e assumimos motor quente (`assume_warm`); A↔B compara real com
   sintético. No T270→T660, os alarmes vêm de tensão da bateria e pressão do óleo (100%), arrefecimento (81%) e
   consumo (78%): são dois caminhões Kenworth com motores diferentes.
@@ -125,6 +129,31 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
   ESP32/simulador via MQTT. O simulador não envia `speedKmh` na telemetria (só na posição; o motor combina as duas).
 - **Reproduzir:** ver seção 7 de `plano-modelo-por-empresa.md`.
 
+## E12 — Empresa B com o novo simulador físico (2026-11-21)
+- **Comandos:** `DatasetGenerator --vehicles 3 --days 3 --seed 42` (desktop-simulator, D31) · `python -m ml_service.train --config configs/empresa-b.yaml`
+- **Artefato:** `models/empresa-b/20261121-143230/` (substitui `20261114-152220` como `LATEST`).
+- **Dados:** 3 caminhões médios × 3 dias, 81 h de motor ligado em 33 segmentos (partidas a frio pela manhã e após
+  pausas longas), 3 rotas reais (rodovia, serra, urbano), condução econômica (2) e agressiva (1); 13 sinais.
+  Estados: parado 22%, transição 57%, rodovia 21% (o T270 é 4% parado — viagem de longa distância).
+- **Falsos alarmes em teste normal:** 0,4% (alvo 1%); 13,2% das janelas no aquecimento.
+
+| Falha | Recall 0,25 / 0,5 / 1,0 (novo) | Antes (E09, simulador antigo) |
+|---|---|---|
+| Superaquecimento | 0,5% / 13% / 73% | 89% / 95% / 98% |
+| Queda de tensão | 92% / 97% / 100% | 96% / 99% / 100% |
+| Queda da pressão do óleo | 87% / 94% / 98% | sem o sinal |
+| Consumo elevado | 1,5% / 13% / 37% | sem o sinal |
+| Vazamento no turbo | 1% / 9% / 25% | sem o sinal |
+| RPM errático | 0,5% / 19% / 71% | 87% / 95% / 99% |
+| Vazamento de combustível | 0,5% / 0,5% / 1,7% | 100% / 100% / 100% |
+
+- **Leituras:** (1) os números caíram porque o novo simulador tem a variabilidade de operação real (paradas,
+  trocas de marcha, rampas, dois estilos de condução) — os dados sintéticos agora reproduzem a mesma dificuldade da
+  Empresa A. (2) O padrão de limiar largo se repete: MAE do arrefecimento 0,48 °C com limiar de 7,7 °C; consumo
+  0,19 L/h com limiar de 3,3 L/h; turbo 0,78 kPa com limiar de 13,6 kPa — reforça o problema 5 (limiar por regime de
+  operação). (3) O vazamento de 0,04 %/s não é detectado: o limiar da inclinação do nível (0,052 %/s) fica acima dele
+  por causa da resolução de 0,4% do sensor e do balanço do combustível na janela de 60 s.
+
 ## Problemas em aberto
 1. EDA desatualizada (E03).
 2. O summary do T270 fala em 4 dias de viagem, mas os timestamps cobrem ~25 h.
@@ -134,3 +163,5 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 6. IsolationForest sem utilidade na configuração atual; comparar com autoencoder (X2).
 7. Curva de aprendizado (X3: horas de dados × desempenho) não feita — o requisito de "≥ 10 h" continua sendo hipótese.
 8. Inferência: falta testar com a API e o frontend reais; faltam Containerfile e entrada no `compose.yaml`; os UUIDs em `configs/inference.yaml` são de exemplo.
+9. Avaliar o ML com as falhas geradas pelo próprio simulador (`DatasetGenerator --fault`, D32), além das injetadas pelo pipeline.
+10. Vazamento de combustível: janela de 60 s é curta para a resolução do sensor de nível; testar inclinação em janela longa (10–30 min).
