@@ -80,6 +80,7 @@ public class VehicleSimulator implements Runnable {
         mqttPublisher.publish(tel);
         for (Message msg : alerts.check(snap, now)) {
             assignIds(msg);
+            state.addAlert(msg);
             mqttPublisher.publish(msg);
         }
     }

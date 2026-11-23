@@ -73,9 +73,12 @@ Geradas uma vez por `tools/fetch_routes.py` e versionadas em `src/main/resources
   T_max(rpm) (subida a partir da marcha lenta, platô, queda por potência máxima e governador).
 - RPM = v/r · 60/(2π) · i_marcha · i_dif; abaixo da marcha lenta, patinação do conversor (marcha lenta + 350·pedal).
   Marcha lenta 150 rpm mais alta com o motor frio.
-- Trocas: sobe acima de `upshiftRpm` (se a marcha seguinte não cair abaixo de `downshiftRpm` + 50), desce abaixo de
-  `downshiftRpm` e reduz quando o torque pedido passa de 97% do disponível (subida). Interrupção de torque de 0,3 s
-  (automático) ou 0,8 s (automatizado de 12 marchas); 2,5 s entre trocas.
+- Trocas: sobe acima de `upshiftRpm` (se a marcha seguinte não cair abaixo de `downshiftRpm` + 50), pulando uma
+  marcha quando a seguinte ainda fica 250 rpm acima do ponto de redução; desce abaixo de `downshiftRpm` (nunca abaixo
+  da marcha de saída) e reduz quando o torque pedido passa de 97% do disponível (subida). Interrupção de torque de
+  0,3 s (automático) ou 0,8 s (automatizado de 12 marchas); espera de 1 s após subir e 2,5 s após reduzir.
+  Sem o pulo e com espera fixa de 2,5 s, o cavalo mecânico com motorista agressivo batia no limitador a cada
+  arrancada (180 s em 2 h na serra); agora são ~5 s em 2 h, só em descidas fortes.
 - Freio-motor / corte de combustível: desacelerando acima da marcha lenta + 150 rpm, consumo 0 e torque −8%.
 - Carga (%) = torque / T_max(rpm); torque (%) = torque / torque de pico; ambos incluem 2,5 kW (×2 em 24 V) de acessórios.
 

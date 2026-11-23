@@ -324,16 +324,20 @@ public final class VehicleModel {
         if (gear < profile.topGear() && rpmHere > upshift
                 && profile.rpmAt(v, gear + 1) > profile.downshiftRpm() + 50) {
             newGear = gear + 1;
-        } else if (gear > 1 && rpmHere < profile.downshiftRpm()) {
-            newGear = gear - 1;
+            // pulo de marcha (câmbios automatizados fazem isso nas marchas baixas): sobe mais uma se a rotação
+            // resultante ainda ficar confortavelmente acima do ponto de redução
+            if (newGear < profile.topGear() && profile.rpmAt(v, newGear + 1) > profile.downshiftRpm() + 250) newGear++;
+        } else if (gear > profile.startGear() && rpmHere < profile.downshiftRpm()) {
+            newGear = gear - 1; // não reduz abaixo da marcha de saída (o câmbio a mantém até parar)
         } else if (gear > 1 && tNeedNm > 0.97 * tAvailNm
                 && profile.rpmAt(v, gear - 1) < profile.ratedRpm() - 150) {
             newGear = gear - 1; // redução para ganhar torque (subida)
         }
         if (newGear != gear) {
+            // espera curta após subir (aceleração contínua); maior após reduzir, para não oscilar entre marchas
+            shiftCooldown = newGear > gear ? 1.0 : 2.5;
             gear = newGear;
             shiftTimer = profile.topGear() > 6 ? 0.8 : 0.3;
-            shiftCooldown = 2.5;
         }
     }
 

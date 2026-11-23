@@ -12,6 +12,7 @@ import com.unesp.desktopsimulator.model.Driver;
 import com.unesp.desktopsimulator.model.Vehicle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -45,6 +46,7 @@ public class RestApiClient {
     private volatile String refreshToken;
     private volatile Instant accessExpiresAt = Instant.MIN;
 
+    @Autowired
     public RestApiClient(RestClient restClient, ObjectMapper mapper) {
         this(restClient, mapper, Clock.systemUTC());
     }

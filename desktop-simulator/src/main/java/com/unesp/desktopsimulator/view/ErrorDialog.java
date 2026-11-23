@@ -55,7 +55,7 @@ public class ErrorDialog extends JDialog {
     }
 
     private static String parseMessage(String raw) {
-        if (raw == null || raw.isBlank()) return "An unexpected error occurred.";
+        if (raw == null || raw.isBlank()) return "Ocorreu um erro inesperado.";
         try {
             JsonNode root = mapper.readTree(raw);
             if (root.has("message")) return root.get("message").asText();

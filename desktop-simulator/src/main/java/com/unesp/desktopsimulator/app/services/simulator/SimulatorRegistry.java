@@ -39,6 +39,10 @@ public class SimulatorRegistry {
         this.mqttPublisher = mqttPublisher;
     }
 
+    public boolean isBrokerConnected() {
+        return mqttPublisher.isConnected();
+    }
+
     public RouteCatalog getRoutes() {
         return routes;
     }
@@ -55,8 +59,9 @@ public class SimulatorRegistry {
         state.setOptions(options);
         state.setRouteName(route.name());
 
-        VehicleModel model = new VehicleModel(
-                VehicleProfile.forVehicleType(vehicle.getVehicleType()), route, options, state.getFaults());
+        VehicleProfile profile = VehicleProfile.forVehicleType(vehicle.getVehicleType());
+        state.setProfile(profile);
+        VehicleModel model = new VehicleModel(profile, route, options, state.getFaults());
         VehicleSimulator simulator = new VehicleSimulator(state, model, mqttPublisher, intervalMs);
 
         Thread thread = new Thread(simulator, "sim-" + vehicle.getNickname());

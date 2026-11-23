@@ -60,6 +60,16 @@ public final class FaultSet {
         return out;
     }
 
+    /**
+     * Fração já atingida da intensidade escolhida (0–1), sem alterar o estado — para a interface.
+     * Retorna 0 se a falha ainda não foi percebida pelo modelo.
+     */
+    public double progress(FaultType type, double simTimeS) {
+        Active a = active.get(type);
+        if (a == null || Double.isNaN(a.onsetS)) return 0;
+        return Math.max(0, Math.min(1.0, (simTimeS - a.onsetS) / RAMP_S));
+    }
+
     /** Intensidade efetiva (0–1) da falha no instante {@code simTimeS}. */
     double level(FaultType type, double simTimeS) {
         Active a = active.get(type);
