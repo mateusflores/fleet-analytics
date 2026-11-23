@@ -33,6 +33,8 @@ permissions:
     description: "Delete roles"
   - name: "telemetry:read"
     description: "Read real-time telemetry data"
+  - name: "fleet-policy:update"
+    description: "Update fleet policies (speed limit, harsh driving thresholds, fuel price)"
 
 roles:
   - name: "Admin"

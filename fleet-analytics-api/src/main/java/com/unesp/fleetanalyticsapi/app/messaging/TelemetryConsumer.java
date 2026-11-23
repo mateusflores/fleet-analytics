@@ -46,9 +46,10 @@ public class TelemetryConsumer {
     public void handleTelemetry(TelemetryMessage msg) {
         jdbcTemplate.update("""
                 INSERT INTO telemetry.vehicle_telemetry
-                    (time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,
-                     engine_temp_c, odometer_km, battery_voltage)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (time, vehicle_id, trip_id, engine_rpm, fuel_level_pct, engine_temp_c, odometer_km,
+                     battery_voltage, speed_kmh, load_pct, engine_torque_pct, pedal_pct, gear, oil_kpa,
+                     fuel_rate_lph, boost_kpa, intake_c)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 Timestamp.from(msg.timestamp()),
                 msg.vehicleId(),
@@ -57,7 +58,16 @@ public class TelemetryConsumer {
                 msg.fuelLevelPct(),
                 msg.engineTempC(),
                 msg.odometerKm(),
-                msg.batteryVoltage()
+                msg.batteryVoltage(),
+                msg.speedKmh(),
+                msg.loadPct(),
+                msg.engineTorquePct(),
+                msg.pedalPct(),
+                msg.gear(),
+                msg.oilKpa(),
+                msg.fuelRateLph(),
+                msg.boostKpa(),
+                msg.intakeC()
         );
         eventPublisher.publishTelemetry(msg);
     }
