@@ -8,6 +8,7 @@ import com.unesp.fleetanalyticsapi.model.enums.FuelType;
 import com.unesp.fleetanalyticsapi.model.enums.VehicleType;
 import com.unesp.fleetanalyticsapi.model.repositories.VehicleRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.specifications.VehicleSpecification;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,12 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     @Transactional
     public VehicleSummary create(CreateVehicleRequest request) {
+        if (vehicleRepository.existsBySerialNumber(request.serialNumber())) {
+            throw new EntityExistsException("Serial number already registered: " + request.serialNumber());
+        }
+        if (vehicleRepository.existsByLicensePlate(request.licensePlate())) {
+            throw new EntityExistsException("License plate already registered: " + request.licensePlate());
+        }
         Vehicle vehicle = Vehicle.builder()
                 .serialNumber(request.serialNumber())
                 .licensePlate(request.licensePlate())
@@ -67,6 +74,12 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + id));
 
+        if (request.serialNumber() != null && vehicleRepository.existsBySerialNumberAndIdNot(request.serialNumber(), id)) {
+            throw new EntityExistsException("Serial number already registered: " + request.serialNumber());
+        }
+        if (request.licensePlate() != null && vehicleRepository.existsByLicensePlateAndIdNot(request.licensePlate(), id)) {
+            throw new EntityExistsException("License plate already registered: " + request.licensePlate());
+        }
         if (request.serialNumber() != null) vehicle.setSerialNumber(request.serialNumber());
         if (request.licensePlate() != null) vehicle.setLicensePlate(request.licensePlate());
         if (request.brand() != null) vehicle.setBrand(request.brand());
@@ -79,7 +92,7 @@ public class VehicleServiceImpl implements VehicleService {
         if (request.fuelType() != null) vehicle.setFuelType(request.fuelType());
         if (request.nickname() != null) vehicle.setNickname(request.nickname());
         if (request.renavam() != null) vehicle.setRenavam(request.renavam());
-        vehicle.setActive(request.active());
+        if (request.active() != null) vehicle.setActive(request.active());
 
         vehicle = vehicleRepository.save(vehicle);
         return toSummary(vehicle);

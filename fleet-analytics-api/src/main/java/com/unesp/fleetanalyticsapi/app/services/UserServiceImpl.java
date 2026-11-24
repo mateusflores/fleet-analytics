@@ -33,6 +33,10 @@ public class UserServiceImpl implements UserService {
             throw new EntityExistsException("Username already taken: " + request.username());
         }
 
+        if (userRepository.existsByEmail(request.email())) {
+            throw new EntityExistsException("Email already registered: " + request.email());
+        }
+
         Role role = roleRepository.findById(request.roleId())
                 .orElseThrow(() -> new EntityNotFoundException("Role not found: " + request.roleId()));
 
@@ -122,6 +126,9 @@ public class UserServiceImpl implements UserService {
             user.setPhone(request.phone());
         }
         if (request.email() != null) {
+            if (userRepository.existsByEmailAndIdNot(request.email(), userId)) {
+                throw new EntityExistsException("Email already registered: " + request.email());
+            }
             user.setEmail(request.email());
         }
 

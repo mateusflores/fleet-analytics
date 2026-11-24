@@ -48,6 +48,10 @@ public class MqttPublisher {
         }
     }
 
+    public boolean isConnected() {
+        return mqttClient.isConnected();
+    }
+
     public void publish(RawData data) {
         if (!mqttClient.isConnected()) {
             log.debug("MQTT not connected, skipping publish for {}", data.getClass().getSimpleName());

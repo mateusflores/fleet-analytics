@@ -10,6 +10,7 @@ import com.unesp.fleetanalyticsapi.model.entities.crud.RefreshToken;
 import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import com.unesp.fleetanalyticsapi.model.repositories.RefreshTokenRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,6 +42,7 @@ public class LoginServiceImpl implements LoginService {
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
+        requireEnabled(user);
 
         return generateJwt(user);
     }
@@ -50,9 +52,9 @@ public class LoginServiceImpl implements LoginService {
     public LoginResponse refreshToken(RefreshTokenRequest request) {
         String tokenStr = request.refreshToken();
 
-        if (jwtService.isTokenExpired(tokenStr)) {
+        if (isExpiredOrInvalid(tokenStr)) {
             throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "Refresh token expired");
+                    HttpStatus.UNAUTHORIZED, "Refresh token expired or invalid");
         }
 
         RefreshToken storedToken = refreshTokenRepository.findByToken(tokenStr)
@@ -66,8 +68,23 @@ public class LoginServiceImpl implements LoginService {
 
         storedToken.setRevoked(true);
         refreshTokenRepository.save(storedToken);
+        requireEnabled(storedToken.getUser());
 
         return generateJwt(storedToken.getUser());
+    }
+
+    private void requireEnabled(User user) {
+        if (!user.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User is disabled");
+        }
+    }
+
+    private boolean isExpiredOrInvalid(String token) {
+        try {
+            return jwtService.isTokenExpired(token);
+        } catch (JwtException | IllegalArgumentException e) {
+            return true;
+        }
     }
 
     private LoginResponse generateJwt(User user) {
@@ -91,13 +108,26 @@ public class LoginServiceImpl implements LoginService {
     @Override
     @Transactional
     public void logout(String accessToken, LogoutRequest request) {
-        String jti = jwtService.extractJti(accessToken);
-        Instant accessExpiry = jwtService.extractExpiration(accessToken);
+        String jti;
+        String username;
+        Instant accessExpiry;
+        try {
+            jti = jwtService.extractJti(accessToken);
+            username = jwtService.extractUsername(accessToken);
+            accessExpiry = jwtService.extractExpiration(accessToken);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
+        }
+        // o access token é do próprio chamador: é invalidado mesmo que o refresh token não confira
         accessTokenBlacklist.add(jti, accessExpiry);
 
         RefreshToken storedToken = refreshTokenRepository.findByToken(request.refreshToken())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Refresh token not found"));
+        if (!storedToken.getUser().getUsername().equals(username)) {
+            // um usuário não pode revogar a sessão de outro
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token does not belong to the user");
+        }
 
         storedToken.setRevoked(true);
         refreshTokenRepository.save(storedToken);

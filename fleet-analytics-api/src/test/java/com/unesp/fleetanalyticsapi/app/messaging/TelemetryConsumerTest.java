@@ -46,6 +46,22 @@ class TelemetryConsumerTest {
     }
 
     @Test
+    void shouldPersistExtendedSignals() {
+        TelemetryMessage msg = new TelemetryMessage(
+                UUID.randomUUID(), UUID.randomUUID(), Instant.now(),
+                1800, 70.0, 90.0, 1000.0, 14.0,
+                82.5, 47.0, 40.0, 30.0, 5, 340.0, 18.2, 66.0, 50.0);
+
+        telemetryConsumer.handleTelemetry(msg);
+
+        org.mockito.ArgumentCaptor<Object[]> args = org.mockito.ArgumentCaptor.forClass(Object[].class);
+        verify(jdbcTemplate).update(anyString(), args.capture());
+        org.assertj.core.api.Assertions.assertThat(args.getValue())
+                .hasSize(17)
+                .endsWith(82.5, 47.0, 40.0, 30.0, 5, 340.0, 18.2, 66.0, 50.0);
+    }
+
+    @Test
     void shouldPersistAndPublishTelemetry() {
         TelemetryMessage msg = new TelemetryMessage(
                 UUID.randomUUID(), null, Instant.now(),

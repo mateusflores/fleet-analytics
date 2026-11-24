@@ -1,0 +1,22 @@
+# Sobe a plataforma inteira a partir da raiz do repositório:
+#   docker compose up -d --build
+# db, rabbitmq, api (fleet-analytics-api/compose.yaml), ml-inference, ml-insights e frontend.
+# Variáveis: fleet-analytics-api/.env (ver .env.example). Os composes de cada projeto continuam funcionando sozinhos.
+#
+# Demonstração isolada (histórico de 12 meses, ver ml-service/docs/plano-insights-historicos.md, seção 8):
+#   docker compose --profile demo up -d --build
+include:
+  - path: fleet-analytics-api/compose.yaml
+  - path: frontend/fleet-analytics/docker-compose.yml
+
+services:
+  # Frontend da demonstração: mesma imagem do frontend, apontando para a API da demo.
+  frontend-demo:
+    profiles: [demo]
+    build:
+      context: frontend/fleet-analytics
+      args:
+        NG_CONFIGURATION: production
+        API_BASE_URL: http://localhost:8082/api/v1
+    ports:
+      - "8083:80"

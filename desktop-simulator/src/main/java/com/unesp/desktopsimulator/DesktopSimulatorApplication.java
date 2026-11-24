@@ -23,7 +23,13 @@ public class DesktopSimulatorApplication {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "false");
+        // acento = azul da plataforma web
+        com.formdev.flatlaf.FlatLaf.setGlobalExtraDefaults(java.util.Map.of("@accentColor", "#1F63F2"));
         FlatDarkLaf.setup();
+        UIManager.put("Component.focusWidth", 1);
+        UIManager.put("ScrollBar.thumbArc", 999);
+        UIManager.put("ScrollBar.width", 10);
+        UIManager.put("TabbedPane.showTabSeparators", true);
         UIManager.put("Button.arc", 8);
         UIManager.put("Component.arc", 8);
         UIManager.put("ProgressBar.arc", 8);
@@ -86,7 +92,7 @@ public class DesktopSimulatorApplication {
     }
 
     private static String extractError(String raw) {
-        if (raw == null || raw.isBlank()) return "Connection failed.";
+        if (raw == null || raw.isBlank()) return "Falha na conexão.";
         try {
             tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
             tools.jackson.databind.JsonNode root = mapper.readTree(raw);
@@ -94,8 +100,8 @@ public class DesktopSimulatorApplication {
             if (root.has("error")) return root.get("error").asText();
         } catch (Exception ignored) {
         }
-        if (raw.contains("Connection refused")) return "Could not connect to the API server.";
-        if (raw.contains("401") || raw.contains("Unauthorized")) return "Invalid username or password.";
+        if (raw.contains("Connection refused")) return "Não foi possível conectar à API.";
+        if (raw.contains("401") || raw.contains("Unauthorized")) return "Usuário ou senha inválidos.";
         if (raw.length() > 100) return raw.substring(0, 100) + "...";
         return raw;
     }

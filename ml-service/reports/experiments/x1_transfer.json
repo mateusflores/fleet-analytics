@@ -1,0 +1,192 @@
+{
+ "empresa-a->t660": {
+  "source": "empresa-a",
+  "target": "t660",
+  "common_signals": [
+   "rpm",
+   "speed_kmh",
+   "load_pct",
+   "engine_torque_pct",
+   "pedal_pct",
+   "coolant_c",
+   "oil_kpa",
+   "fuel_rate_lph",
+   "boost_kpa",
+   "intake_c",
+   "battery_v",
+   "fuel_level_pct"
+  ],
+  "own_test": {
+   "windows": 1378,
+   "alarm_rate": 0.0,
+   "by_detector": {
+    "coolant_c": 0.0,
+    "oil_kpa": 0.0,
+    "fuel_rate_lph": 0.0,
+    "boost_kpa": 0.0,
+    "intake_c": 0.0,
+    "battery_v": 0.0,
+    "fuel_level_pct": 0.0,
+    "rpm_roughness": 0.0
+   }
+  },
+  "other_fleet": {
+   "windows": 36,
+   "alarm_rate": 1.0,
+   "isolation_forest": 0.0,
+   "by_detector": {
+    "coolant_c": 0.8056,
+    "oil_kpa": 1.0,
+    "fuel_rate_lph": 0.7778,
+    "boost_kpa": 0.0,
+    "intake_c": 0.0,
+    "battery_v": 1.0,
+    "fuel_level_pct": 0.0,
+    "rpm_roughness": 0.1944
+   }
+  }
+ },
+ "empresa-a->empresa-b": {
+  "source": "empresa-a",
+  "target": "empresa-b",
+  "common_signals": [
+   "rpm",
+   "speed_kmh",
+   "load_pct",
+   "engine_torque_pct",
+   "pedal_pct",
+   "gear",
+   "coolant_c",
+   "oil_kpa",
+   "fuel_rate_lph",
+   "boost_kpa",
+   "intake_c",
+   "battery_v",
+   "fuel_level_pct"
+  ],
+  "own_test": {
+   "windows": 1378,
+   "alarm_rate": 0.0,
+   "by_detector": {
+    "coolant_c": 0.0,
+    "oil_kpa": 0.0,
+    "fuel_rate_lph": 0.0,
+    "boost_kpa": 0.0,
+    "intake_c": 0.0,
+    "battery_v": 0.0,
+    "fuel_level_pct": 0.0,
+    "rpm_roughness": 0.0
+   }
+  },
+  "other_fleet": {
+   "windows": 25084,
+   "alarm_rate": 0.625498325625897,
+   "isolation_forest": 0.0,
+   "by_detector": {
+    "coolant_c": 0.1101,
+    "oil_kpa": 0.4282,
+    "fuel_rate_lph": 0.0486,
+    "boost_kpa": 0.0889,
+    "intake_c": 0.1223,
+    "battery_v": 0.1195,
+    "fuel_level_pct": 0.0067,
+    "rpm_roughness": 0.047
+   }
+  }
+ },
+ "empresa-b->empresa-a": {
+  "source": "empresa-b",
+  "target": "empresa-a",
+  "common_signals": [
+   "rpm",
+   "speed_kmh",
+   "load_pct",
+   "engine_torque_pct",
+   "pedal_pct",
+   "gear",
+   "coolant_c",
+   "oil_kpa",
+   "fuel_rate_lph",
+   "boost_kpa",
+   "intake_c",
+   "battery_v",
+   "fuel_level_pct"
+  ],
+  "own_test": {
+   "windows": 6300,
+   "alarm_rate": 0.002857142857142857,
+   "by_detector": {
+    "coolant_c": 0.0013,
+    "oil_kpa": 0.0006,
+    "fuel_rate_lph": 0.0,
+    "boost_kpa": 0.0,
+    "intake_c": 0.0,
+    "battery_v": 0.0,
+    "fuel_level_pct": 0.0016,
+    "rpm_roughness": 0.0
+   }
+  },
+  "other_fleet": {
+   "windows": 4955,
+   "alarm_rate": 0.9959636730575177,
+   "isolation_forest": 0.0,
+   "by_detector": {
+    "coolant_c": 0.0006,
+    "oil_kpa": 0.0787,
+    "fuel_rate_lph": 0.91,
+    "boost_kpa": 0.9058,
+    "intake_c": 0.0,
+    "battery_v": 0.0012,
+    "fuel_level_pct": 0.0,
+    "rpm_roughness": 0.0
+   }
+  }
+ },
+ "empresa-b->t660": {
+  "source": "empresa-b",
+  "target": "t660",
+  "common_signals": [
+   "rpm",
+   "speed_kmh",
+   "load_pct",
+   "engine_torque_pct",
+   "pedal_pct",
+   "coolant_c",
+   "oil_kpa",
+   "fuel_rate_lph",
+   "boost_kpa",
+   "intake_c",
+   "battery_v",
+   "fuel_level_pct"
+  ],
+  "own_test": {
+   "windows": 6300,
+   "alarm_rate": 0.003015873015873016,
+   "by_detector": {
+    "coolant_c": 0.0013,
+    "oil_kpa": 0.001,
+    "fuel_rate_lph": 0.0,
+    "boost_kpa": 0.0,
+    "intake_c": 0.0,
+    "battery_v": 0.0,
+    "fuel_level_pct": 0.0017,
+    "rpm_roughness": 0.0
+   }
+  },
+  "other_fleet": {
+   "windows": 36,
+   "alarm_rate": 1.0,
+   "isolation_forest": 0.0,
+   "by_detector": {
+    "coolant_c": 0.3333,
+    "oil_kpa": 1.0,
+    "fuel_rate_lph": 0.7778,
+    "boost_kpa": 0.0,
+    "intake_c": 0.0,
+    "battery_v": 1.0,
+    "fuel_level_pct": 0.0,
+    "rpm_roughness": 0.0
+   }
+  }
+ }
+}

@@ -66,7 +66,9 @@ class LoginServiceImplTest {
 
         RefreshToken storedToken = new RefreshToken();
         storedToken.setRevoked(false);
+        storedToken.setUser(User.builder().username("testuser").enabled(true).build());
 
+        when(jwtService.extractUsername(accessToken)).thenReturn("testuser");
         when(jwtService.extractJti(accessToken)).thenReturn(jti);
         when(jwtService.extractExpiration(accessToken)).thenReturn(accessExpiry);
         when(refreshTokenRepository.findByToken(refreshTokenValue))
@@ -115,6 +117,7 @@ class LoginServiceImplTest {
         RefreshTokenRequest request = new RefreshTokenRequest(oldRefreshToken);
 
         User user = new User();
+        user.setEnabled(true);
         user.setId(userId);
         user.setUsername("testuser");
 
@@ -167,7 +170,7 @@ class LoginServiceImplTest {
                 () -> loginService.refreshToken(request));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
-        assertEquals("Refresh token expired", exception.getReason());
+        assertEquals("Refresh token expired or invalid", exception.getReason());
     }
 
     @Test

@@ -1,49 +1,71 @@
 package com.unesp.desktopsimulator.view;
 
 import com.unesp.desktopsimulator.app.services.client.RestApiClient;
+import com.unesp.desktopsimulator.app.services.client.SessionExpiredException;
 import com.unesp.desktopsimulator.app.services.client.dto.ApiTripSummary;
-import com.unesp.desktopsimulator.app.services.simulator.SimulationState;
+import com.unesp.desktopsimulator.app.services.simulation.DriverStyle;
+import com.unesp.desktopsimulator.app.services.simulation.SimulationOptions;
+import com.unesp.desktopsimulator.app.services.simulation.route.Route;
 import com.unesp.desktopsimulator.app.services.simulator.SimulatorRegistry;
 import com.unesp.desktopsimulator.model.Driver;
-import com.unesp.desktopsimulator.model.FaultType;
 import com.unesp.desktopsimulator.model.Vehicle;
+import com.unesp.desktopsimulator.view.components.Theme;
+import com.unesp.desktopsimulator.view.components.WrapLayout;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainFrame extends JFrame {
+/**
+ * Janela principal: grade de cards dos veículos (centro) e painel do veículo selecionado (direita),
+ * com início/encerramento de viagem e injeção de falhas.
+ */
+public class MainFrame extends JFrame implements VehicleDetailPanel.Actions {
 
-    private static final Color COLOR_STATUS = new Color(0x1A1A2E);
-    private static final Color COLOR_RUNNING = new Color(0x27AE60);
-    private static final Color COLOR_STOPPED = new Color(0x7F8C8D);
+    private enum Filter {
+        ALL("Todos"), RUNNING("Em simulação"), AVAILABLE("Disponíveis"), EXTERNAL("Em viagem (outro terminal)");
+
+        final String label;
+
+        Filter(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
 
     private final SimulatorRegistry registry;
     private final RestApiClient apiClient;
     private List<Vehicle> vehicles;
     private List<Driver> drivers;
 
-    private final VehicleTableModel tableModel;
-    private final JTable table;
-
-    private final JButton refreshButton;
-    private final JButton startButton;
-    private final JButton stopButton;
-    private final JButton faultsButton;
-
-    private final JLabel statusLabel;
-    private final Timer refreshTimer;
-
     private final Map<UUID, Driver> driverAssignments = new HashMap<>();
     private final Map<UUID, UUID> tripIds = new HashMap<>();
-    private Set<UUID> busyVehicleIds = new HashSet<>();
-    private Set<UUID> busyDriverIds = new HashSet<>();
+    private Set<UUID> busyVehicleIds;
+    private Set<UUID> busyDriverIds;
+
+    private final Map<UUID, VehicleCard> cards = new LinkedHashMap<>();
+    private final JPanel grid = new JPanel(new WrapLayout(FlowLayout.LEFT, 14, 14));
+    private final JTextField search = new JTextField(24);
+    private final JComboBox<Filter> filter = new JComboBox<>(Filter.values());
+    private final JButton refreshButton = new JButton("↻  Atualizar");
+    private final JLabel counters = new JLabel();
+    private final JLabel connection = new JLabel();
+    private final JLabel emptyGrid = new JLabel("Nenhum veículo encontrado.", SwingConstants.CENTER);
+    private final VehicleDetailPanel detail;
+    private final Timer refreshTimer;
+    private final Random random = new Random();
+    private Vehicle selected;
 
     public MainFrame(SimulatorRegistry registry, RestApiClient apiClient,
                      List<Vehicle> vehicles, List<Driver> drivers,
@@ -55,101 +77,187 @@ public class MainFrame extends JFrame {
         this.busyVehicleIds = new HashSet<>(busyVehicleIds);
         this.busyDriverIds = new HashSet<>(busyDriverIds);
 
-        setTitle("Fleet Analytics - Desktop Simulator");
+        setTitle("Fleet Analytics — Simulador");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1120, 620);
+        setSize(1360, 820);
+        setMinimumSize(new Dimension(980, 640));
         setLayout(new BorderLayout());
 
-        tableModel = new VehicleTableModel();
-        table = new JTable(tableModel);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.setRowHeight(28);
-        table.setShowGrid(true);
-        table.setGridColor(new Color(0x3E3E3E));
+        add(buildHeader(), BorderLayout.NORTH);
 
-        table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) updateButtonStates();
-        });
+        grid.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+        JScrollPane gridScroll = new JScrollPane(grid);
+        gridScroll.setBorder(BorderFactory.createEmptyBorder());
+        gridScroll.getVerticalScrollBar().setUnitIncrement(18);
+        gridScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        emptyGrid.setForeground(Theme.muted());
+        add(gridScroll, BorderLayout.CENTER);
 
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
-        headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        detail = new VehicleDetailPanel(this, registry.getRoutes().all());
+        add(detail, BorderLayout.EAST);
+        add(buildStatusBar(), BorderLayout.SOUTH);
 
-        setColumnWidths();
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        add(scrollPane, BorderLayout.CENTER);
-
-        refreshButton = createToolbarButton("Refresh", '\u21BB');
-        startButton = createToolbarButton("Start", '\u25B6');
-        stopButton = createToolbarButton("Stop", '\u25A0');
-        faultsButton = createToolbarButton("Inject Fault", '\u26A0');
-
-        refreshButton.addActionListener(e -> handleRefresh());
-        startButton.addActionListener(e -> handleStartSelected());
-        stopButton.addActionListener(e -> handleStopSelected());
-        faultsButton.addActionListener(e -> handleInjectFault());
-
-        stopButton.setEnabled(false);
-        faultsButton.setEnabled(false);
-
-        JToolBar toolbar = new JToolBar();
-        toolbar.setFloatable(false);
-        toolbar.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-        toolbar.add(refreshButton);
-        toolbar.addSeparator();
-        toolbar.add(startButton);
-        toolbar.add(stopButton);
-        toolbar.add(faultsButton);
-        add(toolbar, BorderLayout.NORTH);
-
-        JPanel statusBar = new JPanel(new BorderLayout());
-        statusBar.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
-        statusBar.setBackground(COLOR_STATUS);
-        statusLabel = new JLabel();
-        statusLabel.setForeground(Color.WHITE);
-        statusBar.add(statusLabel, BorderLayout.WEST);
-        add(statusBar, BorderLayout.SOUTH);
-
-        refreshTimer = new Timer(1000, e -> updateTable());
+        rebuildCards();
+        refreshTimer = new Timer(1000, e -> refresh());
         refreshTimer.start();
-
-        updateStatus();
-        updateTable();
+        refresh();
         setLocationRelativeTo(null);
     }
 
-    private JButton createToolbarButton(String text, char icon) {
-        JButton btn = new JButton(icon + "  " + text);
-        btn.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        btn.setFocusPainted(false);
-        return btn;
+    // =====================================================================================================
+    // layout
+
+    private JComponent buildHeader() {
+        JPanel header = new JPanel(new BorderLayout(12, 0));
+        header.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.border()),
+                BorderFactory.createEmptyBorder(12, 18, 12, 18)));
+
+        JLabel title = new JLabel("Frota");
+        title.setFont(Theme.font(Font.BOLD, 20f));
+        JLabel subtitle = new JLabel("Selecione um veículo para iniciar uma viagem, ver os dados ao vivo ou injetar falhas");
+        subtitle.setForeground(Theme.muted());
+        subtitle.setFont(Theme.font(Font.PLAIN, 12f));
+        JPanel titles = new JPanel(new GridLayout(2, 1, 0, 2));
+        titles.add(title);
+        titles.add(subtitle);
+        header.add(titles, BorderLayout.WEST);
+
+        search.putClientProperty("JTextField.placeholderText", "Buscar por apelido, placa ou modelo");
+        search.putClientProperty("JTextField.showClearButton", true);
+        search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+        });
+        filter.addActionListener(e -> applyFilter());
+        refreshButton.addActionListener(e -> handleRefresh());
+
+        JPanel tools = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
+        tools.add(search);
+        tools.add(filter);
+        tools.add(refreshButton);
+        header.add(tools, BorderLayout.EAST);
+        return header;
     }
 
-    private void setColumnWidths() {
-        table.getColumnModel().getColumn(0).setPreferredWidth(100);
-        table.getColumnModel().getColumn(1).setPreferredWidth(110);
-        table.getColumnModel().getColumn(2).setPreferredWidth(155);
-        table.getColumnModel().getColumn(3).setPreferredWidth(85);
-        table.getColumnModel().getColumn(4).setPreferredWidth(70);
-        table.getColumnModel().getColumn(5).setPreferredWidth(75);
-        table.getColumnModel().getColumn(6).setPreferredWidth(65);
-        table.getColumnModel().getColumn(7).setPreferredWidth(80);
-        table.getColumnModel().getColumn(8).setPreferredWidth(140);
-        table.getColumnModel().getColumn(9).setPreferredWidth(80);
+    private JComponent buildStatusBar() {
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, Theme.border()),
+                BorderFactory.createEmptyBorder(6, 18, 6, 18)));
+        counters.setFont(Theme.font(Font.PLAIN, 12f));
+        connection.setFont(Theme.font(Font.PLAIN, 12f));
+        bar.add(counters, BorderLayout.WEST);
+        bar.add(connection, BorderLayout.EAST);
+        return bar;
     }
+
+    // =====================================================================================================
+    // cards
+
+    private VehicleStatus statusOf(Vehicle v) {
+        if (registry.isRunning(v.getId())) return VehicleStatus.RUNNING;
+        if (busyVehicleIds.contains(v.getId())) return VehicleStatus.EXTERNAL;
+        return VehicleStatus.AVAILABLE;
+    }
+
+    private void rebuildCards() {
+        cards.clear();
+        for (Vehicle v : vehicles) {
+            cards.put(v.getId(), new VehicleCard(v, this::select));
+        }
+        if (selected != null) {
+            VehicleCard card = cards.get(selected.getId());
+            selected = card != null ? card.vehicle() : null;
+            if (card != null) card.setSelected(true);
+        }
+        applyFilter();
+    }
+
+    private void applyFilter() {
+        grid.removeAll();
+        Filter f = (Filter) filter.getSelectedItem();
+        int shown = 0;
+        for (VehicleCard card : cards.values()) {
+            Vehicle v = card.vehicle();
+            VehicleStatus st = statusOf(v);
+            boolean statusOk = switch (f) {
+                case ALL -> true;
+                case RUNNING -> st == VehicleStatus.RUNNING;
+                case AVAILABLE -> st == VehicleStatus.AVAILABLE;
+                case EXTERNAL -> st == VehicleStatus.EXTERNAL;
+            };
+            if (statusOk && VehicleViews.matches(v, search.getText())) {
+                grid.add(card);
+                shown++;
+            }
+        }
+        if (shown == 0) grid.add(emptyGrid);
+        grid.revalidate();
+        grid.repaint();
+    }
+
+    private void select(Vehicle v) {
+        if (selected != null && cards.containsKey(selected.getId())) cards.get(selected.getId()).setSelected(false);
+        selected = v;
+        if (v != null) cards.get(v.getId()).setSelected(true);
+        refresh();
+    }
+
+    /** Atualização periódica (1 s): cards, painel lateral e barra de status. */
+    private void refresh() {
+        int running = 0, external = 0;
+        for (VehicleCard card : cards.values()) {
+            Vehicle v = card.vehicle();
+            VehicleStatus st = statusOf(v);
+            if (st == VehicleStatus.RUNNING) running++;
+            if (st == VehicleStatus.EXTERNAL) external++;
+            card.update(st, registry.getState(v.getId()), driverOf(v));
+        }
+        List<Driver> available = VehicleDetailPanel.available(drivers, busyDriverIds);
+        if (selected != null) {
+            detail.show(selected, statusOf(selected), registry.getState(selected.getId()),
+                    driverOf(selected), available);
+        } else {
+            detail.show(null, null, null, null, List.of());
+        }
+        counters.setText(String.format("%d veículos   ·   %d em simulação   ·   %d em viagem em outro terminal   ·   %d motoristas disponíveis",
+                vehicles.size(), running, external, available.size()));
+        boolean mqtt = registry.isBrokerConnected();
+        boolean api = apiClient.isAuthenticated();
+        connection.setText(String.format("<html>API <font color='%s'>●</font> %s &nbsp;&nbsp; MQTT <font color='%s'>●</font> %s</html>",
+                hex(api ? Theme.OK : Theme.CRITICAL), api ? "sessão ativa" : "sessão expirada",
+                hex(mqtt ? Theme.OK : Theme.CRITICAL), mqtt ? "conectado" : "desconectado"));
+    }
+
+    private Driver driverOf(Vehicle v) {
+        var state = registry.getState(v.getId());
+        if (state != null && state.getDriver() != null) return state.getDriver();
+        return driverAssignments.get(v.getId());
+    }
+
+    private static String hex(Color c) {
+        return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
+    }
+
+    // =====================================================================================================
+    // ações
 
     private void handleRefresh() {
-        setEnabled(false);
+        refreshButton.setEnabled(false);
         new SwingWorker<Void, Void>() {
+            List<Vehicle> v;
+            List<Driver> d;
+            Set<UUID> bv;
+            Set<UUID> bd;
+
             @Override
-            protected Void doInBackground() throws Exception {
-                vehicles = apiClient.fetchVehicles();
-                drivers = apiClient.fetchDrivers();
-                busyVehicleIds = apiClient.fetchBusyVehicleIds();
-                busyDriverIds = apiClient.fetchBusyDriverIds();
+            protected Void doInBackground() {
+                v = apiClient.fetchVehicles();
+                d = apiClient.fetchDrivers();
+                bv = apiClient.fetchBusyVehicleIds();
+                bd = apiClient.fetchBusyDriverIds();
                 return null;
             }
 
@@ -157,48 +265,32 @@ public class MainFrame extends JFrame {
             protected void done() {
                 try {
                     get();
-                    updateStatus();
+                    vehicles = v;
+                    drivers = d;
+                    busyVehicleIds = new HashSet<>(bv);
+                    busyDriverIds = new HashSet<>(bd);
+                    rebuildCards();
+                    detail.invalidateSelection();
+                    refresh();
                 } catch (Exception e) {
-                    String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                    ErrorDialog.show(MainFrame.this, "Refresh failed", msg);
+                    showError("Falha ao atualizar", e);
                 } finally {
-                    setEnabled(true);
+                    refreshButton.setEnabled(true);
                 }
             }
         }.execute();
     }
 
-    private void handleStartSelected() {
-        int row = table.getSelectedRow();
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Select a vehicle first", "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Vehicle vehicle = tableModel.getVehicleAt(row);
+    @Override
+    public void startTrip(Vehicle vehicle, Driver driver, Route route, DriverStyle style, boolean warmStart) {
         UUID vehicleId = vehicle.getId();
-
-        if (busyVehicleIds.contains(vehicleId)) {
-            JOptionPane.showMessageDialog(this,
-                    "This vehicle is already on a trip (possibly from another terminal).",
-                    "Vehicle Unavailable", JOptionPane.WARNING_MESSAGE);
+        if (registry.isRunning(vehicleId) || busyVehicleIds.contains(vehicleId)) {
+            detail.startFailed();
             return;
         }
-
-        if (registry.isRunning(vehicleId)) {
-            JOptionPane.showMessageDialog(this, "Vehicle is already running",
-                    "Already Running", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        Driver driver = new DriverSelectionDialog(this, drivers, busyDriverIds).showDialog();
-        if (driver == null) return;
-
-        setEnabled(false);
         new SwingWorker<UUID, Void>() {
             @Override
-            protected UUID doInBackground() throws Exception {
+            protected UUID doInBackground() {
                 return apiClient.startTrip(driver.getId(), vehicleId);
             }
 
@@ -210,76 +302,64 @@ public class MainFrame extends JFrame {
                     tripIds.put(vehicleId, tripId);
                     busyVehicleIds.add(vehicleId);
                     busyDriverIds.add(driver.getId());
-                    registry.start(vehicle, driver, tripId);
-                    updateStatus();
+                    SimulationOptions options = new SimulationOptions(style, warmStart, 25.0,
+                            0.4 + 0.5 * random.nextDouble(), 0.6 + 0.35 * random.nextDouble(),
+                            50_000 + Math.floorMod(vehicleId.hashCode(), 250_000), random.nextLong());
+                    registry.start(vehicle, driver, tripId, route, options);
+                    detail.invalidateSelection();
+                    applyFilter();
+                    refresh();
                 } catch (Exception e) {
-                    String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                    ErrorDialog.show(MainFrame.this, "Failed to start trip", msg);
-                } finally {
-                    setEnabled(true);
+                    detail.startFailed();
+                    showError("Não foi possível iniciar a viagem", e);
                 }
             }
         }.execute();
     }
 
-    private void handleStopSelected() {
-        int row = table.getSelectedRow();
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Select a vehicle first", "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Vehicle vehicle = tableModel.getVehicleAt(row);
+    @Override
+    public void stopTrip(Vehicle vehicle) {
         UUID vehicleId = vehicle.getId();
-        boolean localRunning = registry.isRunning(vehicleId);
-        boolean externalTrip = busyVehicleIds.contains(vehicleId);
-
-        if (!localRunning && !externalTrip) return;
-
-        if (localRunning) {
+        if (registry.isRunning(vehicleId)) {
             UUID tripId = tripIds.remove(vehicleId);
             Driver driver = driverAssignments.remove(vehicleId);
             registry.stop(vehicleId);
             busyVehicleIds.remove(vehicleId);
             if (driver != null) busyDriverIds.remove(driver.getId());
-
-            if (tripId != null) {
-                endTripAsync(tripId);
-            }
-        } else if (externalTrip) {
-            setEnabled(false);
+            if (tripId != null) endTripAsync(tripId);
+            detail.invalidateSelection();
+            applyFilter();
+            refresh();
+        } else if (busyVehicleIds.contains(vehicleId)) {
             new SwingWorker<ApiTripSummary, Void>() {
                 @Override
-                protected ApiTripSummary doInBackground() throws Exception {
-                    return apiClient.findActiveTripByVehicle(vehicleId);
+                protected ApiTripSummary doInBackground() {
+                    ApiTripSummary trip = apiClient.findActiveTripByVehicle(vehicleId);
+                    apiClient.endTrip(trip.id());
+                    return trip;
                 }
 
                 @Override
                 protected void done() {
                     try {
                         ApiTripSummary trip = get();
-                        apiClient.endTrip(trip.id());
                         busyVehicleIds.remove(vehicleId);
                         busyDriverIds.remove(trip.driverId());
-                        updateStatus();
+                        detail.invalidateSelection();
+                        applyFilter();
+                        refresh();
                     } catch (Exception e) {
-                        String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                        ErrorDialog.show(MainFrame.this, "Failed to end trip", msg);
-                    } finally {
-                        setEnabled(true);
+                        showError("Não foi possível encerrar a viagem", e);
                     }
                 }
             }.execute();
         }
-
-        updateStatus();
     }
 
     private void endTripAsync(UUID tripId) {
         new SwingWorker<Void, Void>() {
             @Override
-            protected Void doInBackground() throws Exception {
+            protected Void doInBackground() {
                 apiClient.endTrip(tripId);
                 return null;
             }
@@ -289,99 +369,20 @@ public class MainFrame extends JFrame {
                 try {
                     get();
                 } catch (Exception e) {
-                    String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-                    ErrorDialog.show(MainFrame.this, "Failed to end trip", msg);
+                    showError("Não foi possível encerrar a viagem na API", e);
                 }
             }
         }.execute();
     }
 
-    private void handleInjectFault() {
-        int row = table.getSelectedRow();
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Select a vehicle first", "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
+    private void showError(String title, Exception e) {
+        Throwable cause = e.getCause() != null ? e.getCause() : e;
+        if (cause instanceof SessionExpiredException) {
+            ErrorDialog.show(this, "Sessão expirada",
+                    "Sua sessão expirou. As simulações em andamento continuam publicando via MQTT, "
+                            + "mas reinicie o aplicativo e faça login novamente para gerenciar viagens.");
             return;
         }
-
-        Vehicle vehicle = tableModel.getVehicleAt(row);
-        UUID vehicleId = vehicle.getId();
-
-        if (!registry.isRunning(vehicleId)) {
-            JOptionPane.showMessageDialog(this, "Vehicle must be running to inject faults",
-                    "Not Running", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        SimulationState state = registry.getState(vehicleId);
-        Set<FaultType> currentFaults = state != null
-                ? state.getActiveFaults() : Set.of();
-
-        FaultDialog faultDialog = new FaultDialog(this, currentFaults);
-        Set<FaultType> selected = faultDialog.showDialog();
-
-        if (state == null) return;
-
-        for (FaultType fault : FaultType.values()) {
-            if (selected.contains(fault)) {
-                state.addFault(fault);
-            } else {
-                state.removeFault(fault);
-            }
-        }
+        ErrorDialog.show(this, title, cause.getMessage());
     }
-
-    private void updateTable() {
-        int sel = table.getSelectedRow();
-        UUID selId = sel >= 0 && sel < table.getRowCount()
-                ? tableModel.getVehicleAt(sel).getId() : null;
-
-        List<SimulationState> states = registry.getAllStates();
-        tableModel.update(vehicles, states, Map.copyOf(driverAssignments), busyVehicleIds);
-
-        if (selId != null) {
-            for (int i = 0; i < table.getRowCount(); i++) {
-                Vehicle v = tableModel.getVehicleAt(i);
-                if (v != null && v.getId().equals(selId)) {
-                    table.setRowSelectionInterval(i, i);
-                    break;
-                }
-            }
-        }
-
-        updateButtonStates();
-        updateStatus();
-    }
-
-    private void updateButtonStates() {
-        int row = table.getSelectedRow();
-        if (row < 0) {
-            startButton.setEnabled(true);
-            stopButton.setEnabled(false);
-            faultsButton.setEnabled(false);
-            return;
-        }
-
-        Vehicle vehicle = tableModel.getVehicleAt(row);
-        if (vehicle == null) {
-            startButton.setEnabled(true);
-            stopButton.setEnabled(false);
-            faultsButton.setEnabled(false);
-            return;
-        }
-
-        boolean running = registry.isRunning(vehicle.getId());
-        boolean busy = busyVehicleIds.contains(vehicle.getId());
-        startButton.setEnabled(!running && !busy);
-        stopButton.setEnabled(running || busy);
-        faultsButton.setEnabled(running);
-    }
-
-    private void updateStatus() {
-        int runningCount = registry.getActiveCount();
-        statusLabel.setText("Vehicles: " + vehicles.size()
-                + "  |  Running: " + runningCount
-                + "  |  Busy: " + busyVehicleIds.size());
-    }
-
 }

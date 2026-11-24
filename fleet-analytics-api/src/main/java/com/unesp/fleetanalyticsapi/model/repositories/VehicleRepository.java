@@ -9,4 +9,12 @@ import java.util.UUID;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, UUID>, JpaSpecificationExecutor<Vehicle> {
+
+    boolean existsBySerialNumber(String serialNumber);
+
+    boolean existsByLicensePlate(String licensePlate);
+
+    boolean existsBySerialNumberAndIdNot(String serialNumber, UUID id);
+
+    boolean existsByLicensePlateAndIdNot(String licensePlate, UUID id);
 }

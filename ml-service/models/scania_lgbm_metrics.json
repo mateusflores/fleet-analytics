@@ -1,0 +1,18 @@
+{
+ "validation": {
+  "n": 5046,
+  "custo_sempre_0": 57400.0,
+  "custo_argmax": 57400.0,
+  "custo_min_esperado": 33904.0,
+  "recall_alarme": 0.7279411764705882,
+  "falsos_alarmes": 1759
+ },
+ "test": {
+  "n": 5045,
+  "custo_sempre_0": 56100.0,
+  "custo_argmax": 56100.0,
+  "custo_min_esperado": 36264.0,
+  "recall_alarme": 0.6619718309859155,
+  "falsos_alarmes": 1539
+ }
+}

@@ -1,0 +1,9 @@
+.venv
+data
+notebooks
+reports
+tests
+docs
+**/__pycache__
+*.egg-info
+models/scania_lgbm*

@@ -2,6 +2,7 @@ package com.unesp.fleetanalyticsapi.infra.security;
 
 import com.unesp.fleetanalyticsapi.model.entities.crud.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,8 +91,17 @@ public class JwtService {
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
+    /**
+     * {@code true} se o token (assinatura válida) já expirou. O parser lança {@link ExpiredJwtException} para tokens
+     * expirados antes de devolver as claims; tokens malformados ou com assinatura inválida continuam lançando
+     * {@link io.jsonwebtoken.JwtException}.
+     */
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).isBefore(Instant.now());
+        try {
+            return extractExpiration(token).isBefore(Instant.now());
+        } catch (ExpiredJwtException e) {
+            return true;
+        }
     }
 
     private Claims extractClaims(String token) {

@@ -19,6 +19,6 @@ public record UpdateVehicleRequest(
         FuelType fuelType,
         String nickname,
         String renavam,
-        boolean active
+        Boolean active // null = mantém (atualização parcial)
 ) {
 }

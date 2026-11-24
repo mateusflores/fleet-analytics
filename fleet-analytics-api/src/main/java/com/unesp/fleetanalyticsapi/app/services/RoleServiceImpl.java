@@ -7,12 +7,16 @@ import com.unesp.fleetanalyticsapi.model.entities.crud.Permission;
 import com.unesp.fleetanalyticsapi.model.entities.crud.Role;
 import com.unesp.fleetanalyticsapi.model.repositories.PermissionRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.RoleRepository;
+import com.unesp.fleetanalyticsapi.model.repositories.UserRepository;
 import com.unesp.fleetanalyticsapi.model.repositories.specifications.RoleSpecification;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +30,7 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<RoleSummary> findAll() {
@@ -43,6 +48,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleSummary create(CreateRoleRequest request) {
+        if (roleRepository.findByName(request.name()).isPresent()) {
+            throw new EntityExistsException("Role already exists: " + request.name());
+        }
         Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
 
         if (permissions.size() != request.permissionIds().size()) {
@@ -69,6 +77,11 @@ public class RoleServiceImpl implements RoleService {
             throw new IllegalArgumentException("One or more permission IDs are invalid");
         }
 
+        roleRepository.findByName(request.name())
+                .filter(other -> !other.getId().equals(id))
+                .ifPresent(other -> {
+                    throw new EntityExistsException("Role already exists: " + request.name());
+                });
         role.setName(request.name());
         role.setPermissions(permissions);
 
@@ -86,6 +99,9 @@ public class RoleServiceImpl implements RoleService {
     public void delete(UUID id) {
         if (!roleRepository.existsById(id)) {
             throw new EntityNotFoundException("Role not found: " + id);
+        }
+        if (userRepository.existsByRoleId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Role is assigned to users and cannot be deleted");
         }
         roleRepository.deleteById(id);
     }

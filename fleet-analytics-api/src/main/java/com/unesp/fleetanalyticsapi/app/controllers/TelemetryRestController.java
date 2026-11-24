@@ -1,5 +1,6 @@
 package com.unesp.fleetanalyticsapi.app.controllers;
 
+import com.unesp.fleetanalyticsapi.app.messaging.TelemetryRows;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.EventMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.PositionMessage;
 import com.unesp.fleetanalyticsapi.app.dtos.messaging.TelemetryMessage;
@@ -65,24 +66,14 @@ public class TelemetryRestController {
             @RequestParam(required = false) UUID tripId) {
 
         List<TelemetryMessage> data = jdbcTemplate.query("""
-                SELECT time, vehicle_id, trip_id, engine_rpm, fuel_level_pct,
-                       engine_temp_c, odometer_km, battery_voltage
+                SELECT """ + TelemetryRows.COLUMNS + """
                 FROM telemetry.vehicle_telemetry
                 WHERE time >= ?::timestamptz AND time <= ?::timestamptz
                   AND (?::uuid IS NULL OR vehicle_id = ?::uuid)
                   AND (?::uuid IS NULL OR trip_id = ?::uuid)
                 ORDER BY time ASC
                 """,
-                (rs, rowNum) -> new TelemetryMessage(
-                        rs.getObject("vehicle_id", UUID.class),
-                        rs.getObject("trip_id", UUID.class),
-                        rs.getTimestamp("time").toInstant(),
-                        rs.getObject("engine_rpm", Integer.class),
-                        rs.getDouble("fuel_level_pct"),
-                        rs.getDouble("engine_temp_c"),
-                        rs.getObject("odometer_km", Double.class),
-                        rs.getDouble("battery_voltage")
-                ),
+                TelemetryRows.MAPPER,
                 Timestamp.from(from), Timestamp.from(to),
                 vehicleId, vehicleId, tripId, tripId);
 

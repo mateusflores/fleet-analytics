@@ -1,0 +1,9 @@
+# Kenworth T660 2015 (PACCAR MX-13) — só para o experimento de transferência (412 s de dados; não é treinável)
+company: t660
+min_engine_hours: 0
+sources:
+  - adapter: candump_j1939
+    path: "../data/2015 Kenworth T660/candump_kw_drive/candump_kw_drive.txt"
+    vehicle_id: t660-01
+    vehicle_group: kenworth-t660-mx13
+    assume_warm: true   # o log começa com o motor já quente (arrefecimento 74-89 °C)

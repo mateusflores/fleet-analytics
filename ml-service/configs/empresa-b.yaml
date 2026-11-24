@@ -1,0 +1,32 @@
+# Empresa B — frota sintética gerada pelo desktop-simulator (modelo físico calibrado com o T270)
+# Gerar os dados (a partir de desktop-simulator/):
+#   ./mvnw -q compile exec:java -Dexec.mainClass=com.unesp.desktopsimulator.tools.DatasetGenerator \
+#       -Dexec.args="--out ../ml-service/data/synthetic/empresa-b.csv --vehicles 3 --days 3 --seed 42"
+company: empresa-b
+sources:
+  - adapter: csv
+    path: data/synthetic/empresa-b.csv
+    vehicle_group: caminhao-medio-sim
+    ts_column: timestamp
+    ts_unit: s
+    vehicle_id_column: vehicleId
+    columns:
+      rpm: engineRpm
+      speed_kmh: speedKmh
+      load_pct: loadPct
+      engine_torque_pct: engineTorquePct
+      pedal_pct: pedalPct
+      gear: gear
+      coolant_c: engineTempC
+      oil_kpa: oilKpa
+      fuel_rate_lph: fuelRateLph
+      boost_kpa: boostKpa
+      intake_c: intakeC
+      battery_v: batteryVoltage
+      fuel_level_pct: fuelLevelPct
+      odometer_km: odometerKm
+window: {size_s: 60, stride_s: 10}
+test_frac: 0.25
+target_false_alarm_rate: 0.01
+faults: {duration_s: 300, period_s: 900, severities: [0.25, 0.5, 1.0]}
+seed: 42

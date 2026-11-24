@@ -65,10 +65,12 @@ class TripServiceImplTest {
         vehicleId = UUID.randomUUID();
 
         driver = new User();
+        driver.setEnabled(true);
         driver.setId(driverId);
         driver.setUsername("john_doe");
 
         vehicle = new Vehicle();
+        vehicle.setActive(true);
         vehicle.setId(vehicleId);
         vehicle.setLicensePlate("ABC-1234");
     }
