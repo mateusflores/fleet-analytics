@@ -1,0 +1,170 @@
+:host {
+  display: block;
+}
+
+.fleet-policy-page {
+  max-width: 960px;
+  padding: 8px 10px 28px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.page-description {
+  margin: 8px 0 0;
+  color: #687080;
+  font-size: 1rem;
+}
+
+.loading-spinner,
+.load-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-height: 40vh;
+  color: #737c8c;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 14px 18px;
+  border: 1px solid #b9d4ff;
+  border-radius: 12px;
+  background: #f0f6ff;
+  color: #1f4fae;
+}
+
+.notice p {
+  margin: 0;
+  font-size: .92rem;
+  line-height: 1.45;
+}
+
+.notice--readonly {
+  border-color: #e4e4e7;
+  background: #f6f7f9;
+  color: #4e5868;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.form-card {
+  border: 1px solid #dfe1e5;
+  border-radius: 16px;
+  background: #fff;
+  padding: 24px 28px 20px;
+}
+
+.form-card h2 {
+  margin: 0 0 20px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #172033;
+}
+
+.card-description {
+  margin: -12px 0 20px;
+  color: #687080;
+  font-size: .9rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1.5rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-bottom: 8px;
+}
+
+label {
+  font-size: .95rem;
+  font-weight: 500;
+  color: #2c2f36;
+}
+
+.field-group mat-form-field {
+  width: 100%;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.last-update {
+  color: #6f7785;
+  font-size: .85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.actions button {
+  height: 3rem;
+  min-width: 140px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.primary-btn {
+  background: #1f63f2;
+  color: #fff;
+}
+
+.primary-btn:disabled {
+  background: #c7d6f7;
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #f6f7f9;
+  color: #2d3139;
+  border: 1px solid #dfe1e5;
+}
+
+.btn-loading {
+  --mdc-circular-progress-active-indicator-color: #fff;
+}
+
+@media (max-width: 720px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions button {
+    flex: 1;
+  }
+}

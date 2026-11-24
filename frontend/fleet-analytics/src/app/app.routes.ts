@@ -14,6 +14,7 @@ import { TripListComponent } from './components/trip/trip-list/trip-list.compone
 import { InsightListComponent } from './components/insight/insight-list/insight-list.component';
 import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
+import { FleetPolicyComponent } from './components/fleet-policy/fleet-policy.component';
 import { HomeComponent } from './components/home/home.component';
 
 export const routes: Routes = [
@@ -52,6 +53,11 @@ export const routes: Routes = [
       {
         path: 'insights',
         component: InsightListComponent
+      },
+      {
+        path: 'settings/fleet-policy',
+        component: FleetPolicyComponent,
+        canActivate: [permissionGuard('analytics:view')]
       },
       {
         path: 'roles',

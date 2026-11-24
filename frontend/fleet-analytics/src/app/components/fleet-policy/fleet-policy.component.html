@@ -1,0 +1,155 @@
+<section class="fleet-policy-page">
+  <header class="page-header">
+    <h1>Políticas da frota</h1>
+    <p class="page-description">Limites usados pelo motor de insights para avaliar motoristas e veículos.</p>
+  </header>
+
+  @if (isLoading) {
+    <div class="loading-spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    </div>
+  }
+  @else if (loadError) {
+    <div class="load-error">
+      <p>{{ loadError }}</p>
+      <button mat-button type="button" class="secondary-btn" (click)="loadPolicy()">Tentar novamente</button>
+    </div>
+  }
+  @else {
+    <aside class="notice">
+      <mat-icon>info_outline</mat-icon>
+      <p>Alterações valem para as próximas viagens. Viagens já calculadas guardam os limites usados na época.</p>
+    </aside>
+
+    @if (!canEdit) {
+      <aside class="notice notice--readonly">
+        <mat-icon>lock_outline</mat-icon>
+        <p>Somente leitura: seu perfil não tem a permissão para alterar a política da frota.</p>
+      </aside>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <article class="form-card">
+        <h2>Condução</h2>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="speedLimitKmh">Limite de velocidade da frota (km/h)</label>
+            <mat-form-field appearance="outline">
+              <input id="speedLimitKmh" matInput type="number" step="1"
+                [min]="limits.speedLimitKmh.min" [max]="limits.speedLimitKmh.max"
+                formControlName="speedLimitKmh" />
+              <mat-hint>Entre {{ limits.speedLimitKmh.min }} e {{ limits.speedLimitKmh.max }} km/h</mat-hint>
+              @if (fieldError(form.controls.speedLimitKmh, ' km/h'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="field-group">
+            <label for="idleThresholdMin">Motor ligado parado conta como ociosidade após (min)</label>
+            <mat-form-field appearance="outline">
+              <input id="idleThresholdMin" matInput type="number" step="0.5"
+                [min]="limits.idleThresholdMin.min" [max]="limits.idleThresholdMin.max"
+                formControlName="idleThresholdMin" />
+              <mat-hint>Entre 0,5 e {{ limits.idleThresholdMin.max }} minutos</mat-hint>
+              @if (fieldError(form.controls.idleThresholdMin, ' min'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="harshAccelMs2">Aceleração brusca a partir de (m/s²)</label>
+            <mat-form-field appearance="outline">
+              <input id="harshAccelMs2" matInput type="number" step="0.1"
+                [min]="limits.harshAccelMs2.min" [max]="limits.harshAccelMs2.max"
+                formControlName="harshAccelMs2" />
+              <mat-hint>Entre 0,1 e {{ limits.harshAccelMs2.max }} m/s²</mat-hint>
+              @if (fieldError(form.controls.harshAccelMs2, ' m/s²'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="field-group">
+            <label for="harshBrakeMs2">Frenagem brusca a partir de (m/s²)</label>
+            <mat-form-field appearance="outline">
+              <input id="harshBrakeMs2" matInput type="number" step="0.1"
+                [min]="limits.harshBrakeMs2.min" [max]="limits.harshBrakeMs2.max"
+                formControlName="harshBrakeMs2" />
+              <mat-hint>Entre 0,1 e {{ limits.harshBrakeMs2.max }} m/s²</mat-hint>
+              @if (fieldError(form.controls.harshBrakeMs2, ' m/s²'); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </article>
+
+      <article class="form-card">
+        <h2>Custos</h2>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="fuelPricePerLiter">Preço do diesel (R$/L)</label>
+            <mat-form-field appearance="outline">
+              <span matTextPrefix>R$&nbsp;</span>
+              <input id="fuelPricePerLiter" matInput type="number" step="0.01" min="0.01"
+                formControlName="fuelPricePerLiter" />
+              @if (fieldError(form.controls.fuelPricePerLiter); as msg) {
+                <mat-error>{{ msg }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </article>
+
+      @if (vehicleTypes.length > 0) {
+        <article class="form-card">
+          <h2>Rotação máxima econômica por tipo de veículo</h2>
+          <p class="card-description">Acima deste valor (rpm) a condução conta como fora da faixa econômica.</p>
+          <div class="field-row" formArrayName="vehicleTypes">
+            @for (group of vehicleTypes.controls; track group.controls.vehicleType.value; let i = $index) {
+              <div class="field-group" [formGroupName]="i">
+                <label [for]="'rpm-' + i">{{ group.controls.vehicleType.value | machineTypeLabel }}</label>
+                <mat-form-field appearance="outline">
+                  <input [id]="'rpm-' + i" matInput type="number" step="50"
+                    [min]="limits.economyRpmMax.min" [max]="limits.economyRpmMax.max"
+                    formControlName="economyRpmMax" />
+                  <span matTextSuffix>&nbsp;rpm</span>
+                  @if (fieldError(group.controls.economyRpmMax, ' rpm'); as msg) {
+                    <mat-error>{{ msg }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            }
+          </div>
+        </article>
+      }
+
+      <footer class="form-footer">
+        <span class="last-update">
+          @if (policy?.updatedAt) {
+            Última alteração em {{ policy!.updatedAt | date:'dd/MM/yyyy, HH:mm' }}
+          }
+        </span>
+        @if (canEdit) {
+          <div class="actions">
+            <button mat-button type="button" class="secondary-btn" [disabled]="form.pristine || isSaving" (click)="onDiscard()">
+              Descartar alterações
+            </button>
+            <button mat-flat-button type="submit" class="primary-btn" [disabled]="form.pristine || isSaving">
+              @if (isSaving) {
+                <mat-progress-spinner class="btn-loading" mode="indeterminate" diameter="20"></mat-progress-spinner>
+              }
+              @else {
+                Salvar
+              }
+            </button>
+          </div>
+        }
+      </footer>
+    </form>
+  }
+</section>

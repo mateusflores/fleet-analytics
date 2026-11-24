@@ -68,6 +68,10 @@ export const PERMISSION_TRANSLATIONS: Record<string, PermissionTranslation> = {
     name: 'Excluir perfis',
     description: 'Excluir perfis'
   },
+  'fleet-policy:update': {
+    name: 'Alterar políticas da frota',
+    description: 'Alterar limites de velocidade, direção brusca, ociosidade, preço do diesel e rotação econômica'
+  },
   'telemetry:read': {
     name: 'Visualizar telemetria',
     description: 'Visualizar dados de telemetria dos veículos'
