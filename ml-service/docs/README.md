@@ -7,3 +7,4 @@
 | [experimentos.md](experimentos.md) | Registro de experimentos, resultados, achados e erros corrigidos — base para a seção de resultados |
 
 Regra: toda decisão nova entra em `decisoes.md` e todo resultado numérico em `experimentos.md`, com data e comando para reproduzir.
+- `plano-insights-historicos.md` — insights a partir do histórico (métricas por viagem, políticas da frota, motor de insights).

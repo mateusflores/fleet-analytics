@@ -1,0 +1,8 @@
+# Motor de insights históricos (ver docs/plano-insights-historicos.md).
+# Banco: variáveis da API (DATABASE_URL no formato JDBC, DATABASE_USERNAME, DATABASE_PASSWORD) ou INSIGHTS_DATABASE_URL.
+models_dir: models
+inference_config: configs/inference.yaml   # veículo -> empresa/grupo do modelo de valor esperado
+interval_s: 3600          # intervalo entre execuções no modo contínuo (demo: 300)
+lookback_days: 100        # histórico lido pelas regras (7 + 90 dias da tendência de consumo, com folga)
+trip_batch: 200           # viagens processadas por execução
+window_s: 60              # janela para consumo esperado e saúde

@@ -12,6 +12,8 @@ dependencies = [
     "lightgbm",
     "joblib",
     "pika",
+    "scipy",
+    "psycopg[binary]>=3.2",
 ]
 
 [project.optional-dependencies]

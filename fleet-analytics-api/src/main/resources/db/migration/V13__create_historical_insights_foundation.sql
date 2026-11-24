@@ -40,7 +40,8 @@ CREATE TABLE telemetry.trip_metrics
     excessive_idle_s    INTEGER          NOT NULL DEFAULT 0, -- trechos de ociosidade acima de idle_threshold_s
     distance_km         DOUBLE PRECISION NOT NULL DEFAULT 0,
     fuel_used_l         DOUBLE PRECISION,             -- integral do consumo instantâneo
-    fuel_expected_l     DOUBLE PRECISION,             -- consumo previsto pelo modelo de valor esperado
+    fuel_expected_l     DOUBLE PRECISION,             -- consumo previsto pelo modelo, nas janelas avaliadas
+    idle_fuel_l         DOUBLE PRECISION,             -- combustível gasto parado com motor ligado
     avg_speed_kmh       DOUBLE PRECISION,             -- média em movimento
     max_speed_kmh       DOUBLE PRECISION,
     avg_load_pct        DOUBLE PRECISION,
@@ -71,6 +72,7 @@ SELECT vehicle_id,
        sum(distance_km)                                    AS distance_km,
        sum(fuel_used_l)                                    AS fuel_used_l,
        sum(fuel_expected_l)                                AS fuel_expected_l,
+       sum(idle_fuel_l)                                    AS idle_fuel_l,
        sum(speeding_s)                                     AS speeding_s,
        sum(harsh_accel_count)                              AS harsh_accel_count,
        sum(harsh_brake_count)                              AS harsh_brake_count,
@@ -85,12 +87,14 @@ CREATE VIEW telemetry.daily_driver_summary AS
 SELECT driver_id,
        (start_time AT TIME ZONE 'America/Sao_Paulo')::date AS date,
        count(*)                                            AS trips,
+       sum(engine_on_s)                                    AS engine_on_s,
        sum(driving_s)                                      AS driving_s,
        sum(idle_s)                                         AS idle_s,
        sum(excessive_idle_s)                               AS excessive_idle_s,
        sum(distance_km)                                    AS distance_km,
        sum(fuel_used_l)                                    AS fuel_used_l,
        sum(fuel_expected_l)                                AS fuel_expected_l,
+       sum(idle_fuel_l)                                    AS idle_fuel_l,
        sum(speeding_s)                                     AS speeding_s,
        sum(harsh_accel_count)                              AS harsh_accel_count,
        sum(harsh_brake_count)                              AS harsh_brake_count,

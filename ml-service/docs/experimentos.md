@@ -100,10 +100,10 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 | Empresa B | Kenworth T660 | 5 | 1,1% | **100%** (36 janelas) |
 
 - **Conclusão:** o modelo de uma frota trata a operação normal de outra como anômala em todas as janelas — sustenta D04.
-- **Refeito em 2026-11-21 com a nova Empresa B (E12, 13 sinais comuns):** A→B **61%** (25.084 janelas), B→A **87%**
-  (4.955), B→T660 100%; na própria frota 0,0% (A) e 0,4% (B). A transferência deixou de ser total porque o simulador
-  agora é calibrado com o próprio T270 — mesmo assim os alarmes ficam 2 ordens de grandeza acima da própria frota.
-  Em A→B os alarmes vêm principalmente da pressão do óleo (42%); em B→A, de turbo (64%) e consumo (46%).
+- **Refeito em 2026-11-21 com a nova Empresa B (E12, 13 sinais comuns):** A→B **62,5%** (25.084 janelas), B→A **99,6%**
+  (4.955), B→T660 100%; na própria frota 0,0% (A) e 0,3% (B). A transferência deixou de ser total em A→B porque o
+  simulador agora é calibrado com o próprio T270 — mesmo assim os alarmes ficam 2 ordens de grandeza acima da própria
+  frota. Em A→B os alarmes vêm principalmente da pressão do óleo (43%); em B→A, de consumo (91%) e turbo (91%).
 - **Ressalvas:** o T660 tem só 412 s (36 janelas) e assumimos motor quente (`assume_warm`); A↔B compara real com
   sintético. No T270→T660, os alarmes vêm de tensão da bateria e pressão do óleo (100%), arrefecimento (81%) e
   consumo (78%): são dois caminhões Kenworth com motores diferentes.
@@ -131,28 +131,46 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 
 ## E12 — Empresa B com o novo simulador físico (2026-11-21)
 - **Comandos:** `DatasetGenerator --vehicles 3 --days 3 --seed 42` (desktop-simulator, D31) · `python -m ml_service.train --config configs/empresa-b.yaml`
-- **Artefato:** `models/empresa-b/20261121-143230/` (substitui `20261114-152220` como `LATEST`).
+- **Artefato:** `models/empresa-b/20261121-151111/` (substitui `20261114-152220` como `LATEST`).
 - **Dados:** 3 caminhões médios × 3 dias, 81 h de motor ligado em 33 segmentos (partidas a frio pela manhã e após
   pausas longas), 3 rotas reais (rodovia, serra, urbano), condução econômica (2) e agressiva (1); 13 sinais.
   Estados: parado 22%, transição 57%, rodovia 21% (o T270 é 4% parado — viagem de longa distância).
-- **Falsos alarmes em teste normal:** 0,4% (alvo 1%); 13,2% das janelas no aquecimento.
+- **Falsos alarmes em teste normal:** 0,3% (alvo 1%); 13,2% das janelas no aquecimento.
 
 | Falha | Recall 0,25 / 0,5 / 1,0 (novo) | Antes (E09, simulador antigo) |
 |---|---|---|
-| Superaquecimento | 0,5% / 13% / 73% | 89% / 95% / 98% |
+| Superaquecimento | 0,5% / 41% / 77% | 89% / 95% / 98% |
 | Queda de tensão | 92% / 97% / 100% | 96% / 99% / 100% |
-| Queda da pressão do óleo | 87% / 94% / 98% | sem o sinal |
-| Consumo elevado | 1,5% / 13% / 37% | sem o sinal |
-| Vazamento no turbo | 1% / 9% / 25% | sem o sinal |
-| RPM errático | 0,5% / 19% / 71% | 87% / 95% / 99% |
-| Vazamento de combustível | 0,5% / 0,5% / 1,7% | 100% / 100% / 100% |
+| Queda da pressão do óleo | 88% / 94% / 98% | sem o sinal |
+| Consumo elevado | 3% / 19% / 44% | sem o sinal |
+| Vazamento no turbo | 3% / 16% / 35% | sem o sinal |
+| RPM errático | 0,5% / 0,5% / 54% | 87% / 95% / 99% |
+| Vazamento de combustível | 0,5% / 0,5% / 0,9% | 100% / 100% / 100% |
 
 - **Leituras:** (1) os números caíram porque o novo simulador tem a variabilidade de operação real (paradas,
   trocas de marcha, rampas, dois estilos de condução) — os dados sintéticos agora reproduzem a mesma dificuldade da
-  Empresa A. (2) O padrão de limiar largo se repete: MAE do arrefecimento 0,48 °C com limiar de 7,7 °C; consumo
-  0,19 L/h com limiar de 3,3 L/h; turbo 0,78 kPa com limiar de 13,6 kPa — reforça o problema 5 (limiar por regime de
+  Empresa A. (2) O padrão de limiar largo se repete: MAE do arrefecimento 0,47 °C com limiar de 6,8 °C; consumo
+  0,19 L/h com limiar de 2,7 L/h; turbo 0,74 kPa com limiar de 9,3 kPa — reforça o problema 5 (limiar por regime de
   operação). (3) O vazamento de 0,04 %/s não é detectado: o limiar da inclinação do nível (0,052 %/s) fica acima dele
-  por causa da resolução de 0,4% do sensor e do balanço do combustível na janela de 60 s.
+  por causa da resolução de 0,4% do sensor e do balanço do combustível na janela de 60 s. (4) O detector de
+  irregularidade do RPM tem limiar de 151 rpm para MAE de 3,6 rpm: as trocas de marcha (pulo de marcha, rampas) dominam
+  a cauda — mesmo caso do item (2).
+
+## E13 — Motor de insights históricos (2026-11-23)
+- **Testes unitários com cenários plantados** (`tests/test_insights.py`): 100 dias, 5 caminhões, 6 motoristas,
+  2 viagens por caminhão por dia, ruído aleatório. Plantados: motorista d5 com 4× mais tempo acima do limite;
+  caminhão v1 com consumo +30% nos últimos 7 dias; v2 com pressão do óleo −10% nos últimos 7 dias; v3 com
+  ~9 alertas de superaquecimento na última semana (média anterior ~1). **Resultado:** os 4 cenários encontrados,
+  nenhum insight de motorista/veículo nos assuntos sem cenário, nenhum sinal de desgaste além do óleo.
+- **Ponta a ponta** com TimescaleDB temporário (V1–V13 aplicadas pela API) e 4 caminhões × 4 dias gerados pelo
+  simulador (527 mil leituras, 61 viagens, 5 motoristas em rodízio): 61 viagens processadas e regras avaliadas em
+  < 5 s (com carga do modelo). Consumo real ÷ esperado por caminhão: 0,998–1,003 (modelo da Empresa B
+  calibrado). O caminhão com condução agressiva aparece com 22.643 s acima de 90 km/h, 994 acelerações e 485
+  frenagens bruscas e 9,9% do tempo acima de 2.000 rpm; os outros, 0 s / 0 / 25–26 / 0,2%. Nenhum insight de
+  motorista (correto: no gerador o estilo é do caminhão e os motoristas se revezam); 1 insight de custo da
+  ociosidade. Segunda execução: 0 viagens recalculadas, insight atualizado (sem duplicar).
+- **Limitação:** a avaliação com histórico de meses e cenários por motorista depende do gerador de histórico da
+  Fase 4.
 
 ## Problemas em aberto
 1. EDA desatualizada (E03).
@@ -165,3 +183,4 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 8. Inferência: falta testar com a API e o frontend reais; faltam Containerfile e entrada no `compose.yaml`; os UUIDs em `configs/inference.yaml` são de exemplo.
 9. Avaliar o ML com as falhas geradas pelo próprio simulador (`DatasetGenerator --fault`, D32), além das injetadas pelo pipeline.
 10. Vazamento de combustível: janela de 60 s é curta para a resolução do sensor de nível; testar inclinação em janela longa (10–30 min).
+11. Insights: o gerador de dados atribui o estilo de condução ao veículo, não ao motorista — a Fase 4 precisa de estilo por motorista para avaliar as regras de motoristas ponta a ponta.
