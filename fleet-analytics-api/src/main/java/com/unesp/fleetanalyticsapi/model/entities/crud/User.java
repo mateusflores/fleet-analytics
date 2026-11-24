@@ -74,4 +74,10 @@ public class User implements UserDetails {
     public String getUsername() {
         return username;
     }
+
+    /** Usuário desativado não autentica (login, refresh e tokens já emitidos). */
+    @Override
+    public boolean isEnabled() {
+        return Boolean.TRUE.equals(enabled);
+    }
 }

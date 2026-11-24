@@ -125,10 +125,19 @@ class StreamEngine:
             return None
         company = info["company"]
         if company not in self.models:
-            self.models[company] = load_model(self.models_dir, company)
-            log.info("modelo carregado: %s versão %s", company, self.models[company]["version"])
+            try:
+                self.models[company] = load_model(self.models_dir, company)
+                log.info("modelo carregado: %s versão %s", company, self.models[company]["version"])
+            except (FileNotFoundError, OSError) as e:
+                log.error("modelo da empresa %s indisponível (%s): veículos dela ficam sem detecção", company, e)
+                self.models[company] = None
         model = self.models[company]
+        if model is None:
+            return None
         group = info.get("group") or next(iter(model["detectors"]))
+        if group not in model["detectors"]:
+            log.error("grupo %s não existe no modelo da empresa %s: veículo %s sem detecção", group, company, vid)
+            return None
         self.streams[vid] = VehicleStream(company, group, model["detectors"][group], model["window_size_s"],
                                           model["window_stride_s"], assume_warm=bool(info.get("assume_warm")))
         return self.streams[vid]
@@ -141,7 +150,11 @@ class StreamEngine:
         if st is None or "timestamp" not in payload:
             self.stats["ignored"] += 1
             return []
-        ts = parse_ts(payload["timestamp"])
+        try:
+            ts = parse_ts(payload["timestamp"])
+        except (TypeError, ValueError):
+            self.stats["ignored"] += 1
+            return []
         sec = int(ts)
         st.trip_id = payload.get("tripId") or st.trip_id
         events: list[dict] = []
@@ -157,10 +170,16 @@ class StreamEngine:
                 events = self._score(vid, st, float(st.rows[-1]["sec"]))
         for key, value in payload.items():
             signal = FIELD_MAP.get(key)
-            if signal is None or value is None:
+            if signal is None or value is None or isinstance(value, bool):
+                continue
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                continue  # valor não numérico: descarta só o campo
+            if number != number or number in (float("inf"), float("-inf")):
                 continue
             slot = st.acc.setdefault(signal, [0.0, 0])
-            slot[0] += float(value)
+            slot[0] += number
             slot[1] += 1
         return events
 

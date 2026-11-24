@@ -26,6 +26,8 @@ from ml_service.pipeline.build_dataset import resample_segments
 from ml_service.schema import SIGNALS
 
 MOVING_KMH = 1.0
+ODOMETER_MAX_KMH = 360.0      # incremento acima disso (pelo tempo decorrido) é salto do sensor, não deslocamento
+ODOMETER_RESOLUTION_KM = 0.5  # folga para a resolução do sensor (J1939: 0,125 km) e arredondamentos
 HEALTH_SIGNALS = ("oil_kpa", "coolant_c", "battery_v", "boost_kpa", "intake_c")
 
 
@@ -47,6 +49,20 @@ def to_canonical_seconds(raw: pd.DataFrame, assume_warm: bool = False) -> pd.Dat
     if assume_warm:
         out["engine_on_s"] = np.where(out["engine_on"], ENGINE_ON_S_CAP, 0.0)
     return out
+
+
+def _odometer_distance(sec: pd.DataFrame) -> float:
+    """Soma dos incrementos plausíveis do odômetro dentro de cada trecho: ignora reinícios (queda) e saltos maiores do
+    que o veículo poderia andar no tempo decorrido desde a última mudança de valor."""
+    total = 0.0
+    grid = sec[["segment", "odometer_km"]].assign(t=sec.groupby("segment").cumcount())  # grade de 1 s por trecho
+    for _, g in grid.dropna().groupby("segment"):
+        changed = g[g["odometer_km"].diff().fillna(1) != 0]
+        d_km = changed["odometer_km"].diff()
+        d_s = changed["t"].diff()
+        ok = (d_km >= 0) & (d_km <= d_s * ODOMETER_MAX_KMH / 3600 + ODOMETER_RESOLUTION_KM)
+        total += float(d_km[ok].sum())
+    return total
 
 
 def _runs(mask: np.ndarray, segment: np.ndarray) -> list[int]:
@@ -149,11 +165,10 @@ def compute_trip_metrics(raw: pd.DataFrame, policy: FleetPolicy, vehicle_type: s
     # distância: odômetro por trecho quando disponível e coerente; senão, integral da velocidade
     dist_speed = float(np.nansum(np.where(on, speed, 0.0)) / 3600)
     dist_odo = None
-    if "odometer_km" in sec:
-        span = sec.groupby("segment")["odometer_km"].agg(lambda s: s.max() - s.min())
-        if span.notna().all():
-            dist_odo = float(span.sum())
-    metrics["distance_km"] = dist_odo if dist_odo is not None and dist_odo >= 0.5 * dist_speed else dist_speed
+    if "odometer_km" in sec and sec["odometer_km"].notna().any():
+        dist_odo = _odometer_distance(sec)
+    coherent = dist_odo is not None and (dist_speed < 1.0 or 0.5 * dist_speed <= dist_odo <= 1.5 * dist_speed)
+    metrics["distance_km"] = dist_odo if coherent else dist_speed
 
     # direção brusca: variação de velocidade em 1 s dentro do mesmo trecho
     accel = np.diff(speed, prepend=np.nan) / 3.6

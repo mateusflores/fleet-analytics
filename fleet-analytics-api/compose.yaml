@@ -55,6 +55,138 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Serviço de ML (ml-service): uma imagem, dois processos.
+  ml-inference:
+    build:
+      context: ../ml-service
+      dockerfile: Containerfile
+    image: fleet-analytics-ml:latest
+    command: ["python", "-m", "ml_service.inference.service", "--config", "configs/inference.compose.yaml"]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ml-insights:
+    image: fleet-analytics-ml:latest
+    pull_policy: never
+    command: ["python", "-m", "ml_service.insights.run", "--config", "configs/insights.compose.yaml"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      INSIGHTS_INTERVAL_S: ${INSIGHTS_INTERVAL_S:-3600}
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+      ml-inference:
+        condition: service_started   # garante que a imagem compartilhada já foi construída
+    restart: unless-stopped
+
+  # ---- Demonstração (perfil `demo`): plataforma paralela e isolada, com o histórico gerado por
+  # ml_service.insights.demo. Nada é compartilhado com a plataforma principal (banco, broker e filas próprios).
+  #   docker compose --profile demo up -d --build
+  # Portas: banco 5433, API 8082, frontend 8083, MQTT 1884 (simulador: API_BASE_URL=http://localhost:8082 e
+  # MQTT_BROKER_URL=tcp://localhost:1884). Carga: ver ml-service/docs/plano-insights-historicos.md, seção 8.
+  rabbitmq-demo:
+    profiles: [demo]
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "1884:1883"
+      - "15673:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+
+  db-demo:
+    profiles: [demo]
+    image: timescale/timescaledb:latest-pg18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_demo:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-demo:
+    profiles: [demo]
+    build:
+      context: .
+      dockerfile: Containerfile
+    ports:
+      - "8082:8080"
+    environment:
+      DATABASE_URL: jdbc:postgresql://db-demo:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      RABBITMQ_HOST: rabbitmq-demo
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    depends_on:
+      db-demo:
+        condition: service_healthy
+      rabbitmq-demo:
+        condition: service_healthy
+
+  ml-inference-demo:
+    profiles: [demo]
+    image: fleet-analytics-ml:latest
+    pull_policy: never
+    command: ["python", "-m", "ml_service.inference.service", "--config", "configs/inference.compose.yaml"]
+    environment:
+      RABBITMQ_HOST: rabbitmq-demo
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+    depends_on:
+      rabbitmq-demo:
+        condition: service_healthy
+      ml-inference:
+        condition: service_started   # imagem compartilhada construída pelo serviço principal
+    restart: unless-stopped
+
+  ml-insights-demo:
+    profiles: [demo]
+    image: fleet-analytics-ml:latest
+    pull_policy: never
+    command: ["python", "-m", "ml_service.insights.run", "--config", "configs/insights.compose.yaml"]
+    environment:
+      DATABASE_URL: jdbc:postgresql://db-demo:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      INSIGHTS_INTERVAL_S: ${INSIGHTS_INTERVAL_S:-3600}
+    depends_on:
+      db-demo:
+        condition: service_healthy
+      api-demo:
+        condition: service_started
+      ml-inference:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  pgdata_demo:
   rabbitmq_data:

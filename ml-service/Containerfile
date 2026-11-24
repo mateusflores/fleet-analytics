@@ -1,0 +1,21 @@
+# Imagem única do ml-service: serviço de inferência em tempo real e motor de insights históricos.
+#   inferência: python -m ml_service.inference.service --config configs/inference.compose.yaml
+#   insights:   python -m ml_service.insights.run --config configs/insights.compose.yaml
+FROM python:3.12-slim
+
+# LightGBM depende do OpenMP
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY pyproject.toml ./
+COPY src src
+RUN pip install --no-cache-dir .
+
+COPY configs configs
+COPY models models
+
+RUN useradd --system --uid 10001 ml && chown -R ml /app
+USER ml
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "-m", "ml_service.inference.service", "--config", "configs/inference.compose.yaml"]

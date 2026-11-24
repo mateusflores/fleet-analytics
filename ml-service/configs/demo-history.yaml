@@ -1,0 +1,68 @@
+# Histórico de demonstração e avaliação do motor de insights (Fase 4 — plano-insights-historicos.md).
+# Datas são relativas ao fim do histórico (`days_ago`), para o histórico sempre terminar "hoje" na apresentação.
+seed: 2026
+days: 365                 # tamanho do histórico
+live_days: 14             # últimos dias carregados a 1 Hz no banco da demo (o resto só em trip_metrics)
+vehicle_type: RIGID_TRUCK # caminhão médio do simulador (modelo empresa-b/caminhao-medio-sim)
+
+# Escala: probabilidade de o veículo operar no dia; motorista folga com `driver_day_off` (além de domingo).
+operation: {weekday: 0.95, saturday: 0.4, sunday: 0.0, driver_day_off: 0.08}
+# Temperatura ambiente média do dia: média + amplitude × cos(2π(dia do ano − pico)/365) (verão em janeiro).
+climate: {mean_c: 23.0, amplitude_c: 6.5, peak_day_of_year: 20, daily_sd_c: 2.0}
+
+vehicles:
+  - {key: demo-01, plate: DMO1A01, nickname: Bandeirante 01}
+  - {key: demo-02, plate: DMO1A02, nickname: Bandeirante 02}
+  - {key: demo-03, plate: DMO1A03, nickname: Anchieta 03}
+  - {key: demo-04, plate: DMO1A04, nickname: Anchieta 04}
+  - {key: demo-05, plate: DMO1A05, nickname: Campinas 05}
+  - {key: demo-06, plate: DMO1A06, nickname: Campinas 06}
+  - {key: demo-07, plate: DMO1A07, nickname: Santos 07}
+  - {key: demo-08, plate: DMO1A08, nickname: Santos 08}
+
+# style: ECONOMIC | NORMAL | AGGRESSIVE; idle_habit_s: tempo típico parado com motor ligado na saída e na chegada.
+drivers:
+  - {key: d01, first: Ana, last: Ribeiro, style: NORMAL, idle_habit_s: 90}
+  - {key: d02, first: Bruno, last: Carvalho, style: ECONOMIC, idle_habit_s: 60}
+  - {key: d03, first: Carlos, last: Mendes, style: AGGRESSIVE, idle_habit_s: 90}       # S1
+  - {key: d04, first: Daniela, last: Souza, style: NORMAL, idle_habit_s: 120}
+  - {key: d05, first: Eduardo, last: Lima, style: NORMAL, idle_habit_s: 90}            # S3 (muda de hábito)
+  - {key: d06, first: Fernanda, last: Alves, style: ECONOMIC, idle_habit_s: 90}
+  - {key: d07, first: Gustavo, last: Pereira, style: NORMAL, idle_habit_s: 1200}       # S2
+  - {key: d08, first: Helena, last: Costa, style: NORMAL, idle_habit_s: 60}
+  - {key: d09, first: Igor, last: Martins, style: NORMAL, idle_habit_s: 120}
+  - {key: d10, first: Juliana, last: Rocha, style: ECONOMIC, idle_habit_s: 90}
+
+# Cenários com verdade conhecida. `expect`: insights que o motor deve abrir (categoria e, se houver, sinal).
+# Falhas: intensidade 0–1 do FaultSet do simulador, crescendo linearmente de 0 a `peak` em `ramp_days`;
+# `end_days_ago` = conserto (a falha some e o insight deve ser resolvido).
+scenarios:
+  - id: S1
+    title: Motorista agressivo
+    driver_style: {driver: d03, style: AGGRESSIVE}
+    expect: [{category: DRIVER_SPEEDING}, {category: DRIVER_HARSH_DRIVING}, {category: DRIVER_RPM}]
+  - id: S2
+    title: Motorista que deixa o motor ligado parado
+    driver_idle: {driver: d07}
+    expect: [{category: DRIVER_IDLE}]
+  - id: S3
+    title: Motorista que passa a dirigir de forma agressiva
+    driver_style: {driver: d05, style: AGGRESSIVE, start_days_ago: 100}
+    expect: [{category: DRIVER_SPEEDING}, {category: DRIVER_HARSH_DRIVING}, {category: DRIVER_RPM}]
+  - id: S4
+    title: Bico injetor desregulando
+    fault: {vehicle: demo-02, type: FUEL_OVERCONSUMPTION, start_days_ago: 45, ramp_days: 10, peak: 0.6}
+    expect: [{category: VEHICLE_FUEL_TREND}]
+  - id: S5
+    title: Alternador degradando (consertado depois — S8)
+    fault: {vehicle: demo-04, type: BATTERY_DRAIN, start_days_ago: 200, ramp_days: 30, peak: 0.5, end_days_ago: 150}
+    expect: [{category: VEHICLE_HEALTH_DRIFT, signal: battery_v, resolves: true}]
+  - id: S6
+    title: Bomba de óleo desgastando
+    fault: {vehicle: demo-06, type: OIL_PRESSURE_DROP, start_days_ago: 75, ramp_days: 45, peak: 0.3}
+    expect: [{category: VEHICLE_HEALTH_DRIFT, signal: oil_kpa}]
+  - id: S7
+    title: Radiador obstruindo
+    # calibração (E14): até ~0,6 o termostato e a ventoinha compensam (+2–3 °C); 0,8 → +4–5 °C; 0,9 → alertas
+    fault: {vehicle: demo-07, type: OVERHEATING, start_days_ago: 120, ramp_days: 60, peak: 0.9}
+    expect: [{category: VEHICLE_HEALTH_DRIFT, signal: coolant_c}, {category: VEHICLE_ALERT_RECURRENCE, optional: true}]

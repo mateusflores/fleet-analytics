@@ -1,6 +1,6 @@
 # Plano — insights a partir do histórico
 
-Complementa o detector em tempo real (`plano-modelo-por-empresa.md`). Decisões D34–D38 em `decisoes.md`.
+Complementa o detector em tempo real (`plano-modelo-por-empresa.md`). Decisões D34–D47 em `decisoes.md`.
 
 ## 1. Objetivo e diferença para o detector em tempo real
 
@@ -81,7 +81,7 @@ As tabelas `trip_metrics` e `daily_vehicle_summary` da V10 nunca foram usadas e 
 | 1. Dados | V13; `TelemetryMessage` e consumidor com os sinais extras; REST/SSE devolvendo os sinais; políticas da frota (`GET/PUT /api/v1/fleet-policy`, permissão `fleet-policy:update`); sincronização de permissões novas no `DataSeeder` | ✅ 2026-11-23 — migração testada atualizando um banco em V12 com dados; 60 testes da API passando |
 | 2. Motor | métricas por viagem ao encerrar a viagem; motor de insights agendado com os 9 tipos; deduplicação/expiração | ✅ 2026-11-23 — `ml_service.insights` (E13) |
 | 3. Exposição | `GET /api/v1/insights` (filtros status/escopo/assunto/categoria, nome do assunto), `GET/PATCH /api/v1/insights/{id}` (visto/descartado); integração no frontend (documentada em `docs/integracao-frontend.md`) | ✅ 2026-11-23 na API — testado contra banco temporário; 67 testes da API passando. Frontend: a cargo do colega |
-| 4. Demo e avaliação | histórico de 12 meses só em `trip_metrics` (+ 2 semanas a 1 Hz) com cenários plantados (motorista agressivo, injetor que desregula numa data, alternador que degrada); medir acerto, atraso e insights falsos | pendente |
+| 4. Demo e avaliação | histórico de 12 meses só em `trip_metrics` (+ 2 semanas a 1 Hz) com cenários plantados (motorista agressivo, injetor que desregula numa data, alternador que degrada); medir acerto, atraso e insights falsos | ✅ 2026-11-24 — `ml_service.insights.demo` (E14): 11/11 insights esperados, 1 episódio falso em 275 dias |
 
 ## 6. Avaliação (para o relatório)
 
@@ -113,13 +113,13 @@ Convenções do cálculo por viagem:
   com `assume_warm` no `configs/inference.yaml`), com o detector do grupo do veículo. A razão real ÷ esperado usa
   o combustível real **dessas mesmas janelas** (`health.fuel_real_l`), não o total da viagem.
 
-Critérios das regras (constantes no topo de `rules.py`):
+Critérios das regras (constantes no topo de `rules.py`; ciclo de vida com histerese de 48 h antes de resolver, D46):
 
 | Regra | Período | Mínimo de dados | Disparo | Confirmação | Gravidade |
 |---|---|---|---|---|---|
-| Motoristas (4) | 30 dias | 10 h dirigidas (300 km na direção brusca); ≥ 3 motoristas no tipo de veículo | taxa ≥ 1,25 × mediana dos colegas (com piso) | percentil 5% do *bootstrap* das viagens do motorista acima da mediana | ≥ 2× crítico |
-| Consumo × histórico | 7 dias × 90 anteriores | 3 viagens / 20 L esperados × 5 viagens / 60 L | razão real÷esperado ≥ +10% | percentil 5% do *bootstrap* > +3% | ≥ +25% crítico |
-| Desgaste | 7 dias × 60 anteriores | 3 dias × 7 dias | óleo −5%, bateria −2,5%, turbo −10%, temperatura +3 °C | Mann-Whitney unilateral p < 0,05 | óleo −12%, bateria −6%, turbo −20%, +6 °C |
+| Motoristas (4) | 30 dias | 10 h dirigidas (300 km na direção brusca); ≥ 3 motoristas no tipo de veículo | taxa ≥ 1,25 × mediana dos colegas (com piso) **e** diferença absoluta mínima (5 min/10 h, 3/100 km, 2 p.p.) | percentil 5% do *bootstrap* das viagens do motorista ≥ 1,25 × mediana (D46) | ≥ 2× crítico |
+| Consumo × histórico | 7 dias × 90 anteriores | 3 viagens / 20 L esperados × 5 viagens / 60 L | razão real÷esperado ≥ +10% sobre o histórico, **ou** ≥ +15% sobre o modelo (persistente, D47) | percentil 5% do *bootstrap* > +3% (tendência) / > +7,5% (persistente) | ≥ +25% crítico |
+| Desgaste | 7 dias × 60 anteriores | 3 dias × 7 dias | tendência: óleo −5%, bateria −2,5%, turbo −10%, temperatura +3 °C; **ou** persistente sobre o modelo: −8%, −4%, −15%, +4 °C (D47) | tendência: Mann-Whitney unilateral p < 0,05; persistente: ≥ 80% dos dias recentes além de metade do limiar | óleo −12%, bateria −6%, turbo −20%, +6 °C |
 | Alertas recorrentes | 7 dias × até 8 semanas | ≥ 5 semanas de histórico | ≥ 3 alertas e ≥ 3× a média semanal | Poisson p < 0,01 | crítico se houver alerta crítico |
 | Custo da ociosidade | 30 dias | — | ≥ R$ 50 | — | informativo |
 | Ranking de eficiência | 30 dias | ≥ 3 veículos com ≥ 50 L esperados | ≥ +8% acima da mediana | — | ≥ +20% atenção |
@@ -133,5 +133,44 @@ export DATABASE_URL=jdbc:postgresql://localhost:5432/<banco> DATABASE_USERNAME=<
 .venv/bin/python -m ml_service.insights.run --config configs/insights.yaml          # contínuo (interval_s)
 ```
 
+No compose (raiz do repositório), o motor roda como o serviço `ml-insights` com `configs/insights.compose.yaml`;
+`INSIGHTS_INTERVAL_S` ajusta o intervalo (ex.: 300 na demo).
+
 O motor usa o mapeamento veículo → empresa/grupo de `configs/inference.yaml`; veículos sem modelo têm todas as
 métricas, exceto consumo esperado e saúde (e ficam fora das regras de consumo e desgaste).
+
+## 8. Histórico de demonstração e avaliação (Fase 4)
+
+Código em `src/ml_service/insights/demo/` e `desktop-simulator/.../tools/HistoryGenerator.java`:
+
+| Módulo | Papel |
+|---|---|
+| `configs/demo-history.yaml` | frota, motoristas (estilo e hábito de ociosidade), clima e os cenários S1–S7 com a verdade conhecida |
+| `scenario.py` | YAML → agenda veículo × dia (motorista, estilo, ociosidade, ambiente, intensidade das falhas) e `ground_truth` (D43) |
+| `HistoryGenerator` (Java) | executa a agenda com o `VehicleModel`: viagens, alertas (`AlertMonitor`) e telemetria a 1 Hz |
+| `backfill.py` | métricas por viagem com o mesmo `compute_trip_metrics` do caminho ao vivo |
+| `build.py` | orquestra mês a mês, em paralelo; guarda a telemetria 1 Hz só dos meses das 2 últimas semanas |
+| `evaluate.py` | replay dia a dia das regras e do planner e comparação com a verdade conhecida (D45) |
+| `load.py` | carga no banco **da demo**: cadastros pela API, viagens/métricas/alertas por `COPY`, depois o executor normal |
+
+```bash
+# 1. gerar (≈ 3 min com 8 processos; data/demo/, ~100 MB)
+cd ml-service
+.venv/bin/python -m ml_service.insights.demo.build --config configs/demo-history.yaml --jobs 8 [--end-date AAAA-MM-DD]
+
+# 2. avaliar (≈ 1 min; reports/insights/e14_demo_evaluation.json + tabela no terminal)
+.venv/bin/python -m ml_service.insights.demo.evaluate
+
+# 3. subir a plataforma da demo (na raiz do repositório) e carregar
+docker compose --profile demo up -d --build
+DEMO_DATABASE_URL=postgresql://<usuário>:<senha>@localhost:5433/<banco> ADMIN_PASSWORD=<senha do admin> \
+  .venv/bin/python -m ml_service.insights.demo.load --api http://localhost:8082/api/v1 [--reset]
+```
+
+- Frontend da demo: `http://localhost:8083` (API 8082). O serviço `ml-insights-demo` continua reavaliando os
+  insights a cada `INSIGHTS_INTERVAL_S`.
+- Para mostrar telemetria ao vivo na demo, o simulador pode apontar para ela:
+  `API_BASE_URL=http://localhost:8082 MQTT_BROKER_URL=tcp://localhost:1884` (veículos `DEMO-*`, motoristas `demo.*`,
+  senha `DEMO_DRIVER_PASSWORD`, padrão `demo-driver`).
+- O histórico termina em `--end-date` (padrão: hoje). Para a apresentação, gere e carregue no próprio dia (ou na
+  véspera) para os insights refletirem "os últimos 7/30 dias".

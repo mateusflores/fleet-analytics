@@ -5,7 +5,9 @@ Regras:
   gravidade subir, um insight já reconhecido volta a ACTIVE;
 - candidato sem insight aberto → cria, exceto se o usuário descartou um de mesma chave há menos de
   `DISMISS_SNOOZE_DAYS` dias e a gravidade não subiu;
-- insight aberto sem candidato → RESOLVED (a condição deixou de existir).
+- insight aberto sem candidato → RESOLVED (a condição deixou de existir), mas só depois de `RESOLVE_AFTER_H`
+  horas sem ser confirmado (`updated_at` = última execução em que a condição apareceu): histerese que evita abrir e
+  fechar o mesmo insight quando a métrica oscila perto do limiar.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ import pandas as pd
 from ml_service.insights.rules import SEVERITY_RANK, Candidate
 
 DISMISS_SNOOZE_DAYS = 14
+RESOLVE_AFTER_H = 48
 
 
 @dataclass
@@ -29,7 +32,8 @@ class Action:
 
 def plan(candidates: list[Candidate], open_insights: pd.DataFrame, dismissed: pd.DataFrame,
          now: pd.Timestamp) -> list[Action]:
-    """`open_insights`: id, dedup_key, status, severity. `dismissed`: dedup_key, severity, updated_at."""
+    """`open_insights`: id, dedup_key, status, severity e, opcionalmente, updated_at (sem ela, resolve na hora).
+    `dismissed`: dedup_key, severity, updated_at."""
     actions: list[Action] = []
     open_by_key = {r["dedup_key"]: r for _, r in open_insights.iterrows()} if not open_insights.empty else {}
     snooze = {}
@@ -51,7 +55,12 @@ def plan(candidates: list[Candidate], open_insights: pd.DataFrame, dismissed: pd
             continue
         else:
             actions.append(Action("insert", c))
+    grace = pd.Timedelta(hours=RESOLVE_AFTER_H)
     for key, cur in open_by_key.items():
-        if key not in seen:
-            actions.append(Action("resolve", insight_id=str(cur["id"])))
+        if key in seen:
+            continue
+        last_seen = cur.get("updated_at")
+        if last_seen is not None and not pd.isna(last_seen) and now - pd.Timestamp(last_seen) < grace:
+            continue  # ainda dentro da histerese
+        actions.append(Action("resolve", insight_id=str(cur["id"])))
     return actions

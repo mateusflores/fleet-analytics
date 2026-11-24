@@ -31,6 +31,8 @@ BOOTSTRAP = 400
 
 TREND_RECENT_DAYS = 7
 TREND_BASE_DAYS = 90
+# Desvio persistente em relação ao modelo (independe do histórico do veículo, que absorve uma falha estável — D47)
+FUEL_PERSIST_RATIO = 1.15
 HEALTH_BASE_DAYS = 60
 ALERT_BASE_WEEKS = 8
 
@@ -96,17 +98,18 @@ class PeerMetric:
     scale: float                # rate = soma(numerator) / soma(exposure) * scale
     min_exposure: float         # na unidade de soma(exposure) (ex.: segundos ou km)
     floor: float                # piso da mediana, para não dividir por ~0
+    min_diff: float             # diferença absoluta mínima para a mediana (na unidade da taxa), para ter relevância
 
 
 PEER_METRICS = (
     PeerMetric("DRIVER_SPEEDING", "Velocidade acima da política", "speeding_s", "driving_s",
-               scale=10 * 3600 / 60, min_exposure=10 * 3600, floor=1.0),          # min a cada 10 h dirigidas
+               scale=10 * 3600 / 60, min_exposure=10 * 3600, floor=1.0, min_diff=5.0),   # min a cada 10 h dirigidas
     PeerMetric("DRIVER_HARSH_DRIVING", "Direção brusca", "harsh_total", "distance_km",
-               scale=100.0, min_exposure=300.0, floor=0.5),                      # eventos a cada 100 km
+               scale=100.0, min_exposure=300.0, floor=0.5, min_diff=3.0),         # eventos a cada 100 km
     PeerMetric("DRIVER_IDLE", "Motor ligado parado", "excessive_idle_s", "engine_on_s",
-               scale=100.0, min_exposure=10 * 3600, floor=2.0),                  # % do tempo de motor ligado
+               scale=100.0, min_exposure=10 * 3600, floor=2.0, min_diff=2.0),     # % do tempo de motor ligado
     PeerMetric("DRIVER_RPM", "Rotação fora da faixa econômica", "rpm_over_s", "driving_s",
-               scale=100.0, min_exposure=10 * 3600, floor=2.0),                  # % do tempo dirigindo
+               scale=100.0, min_exposure=10 * 3600, floor=2.0, min_diff=2.0),     # % do tempo dirigindo
 )
 
 
@@ -162,13 +165,13 @@ def driver_peer_insights(trips: pd.DataFrame, now: pd.Timestamp, policy: FleetPo
                 med = float(agg.drop(index=driver_id)["rate"].median())
                 base = max(med, m.floor)
                 ratio = row["rate"] / base
-                if ratio < PEER_MIN_RATIO:
+                if ratio < PEER_MIN_RATIO or row["rate"] - base < m.min_diff:
                     continue
                 d = group[group["driver_id"] == driver_id]
                 low = _bootstrap_rate_low(d[m.numerator].to_numpy(float), d[m.exposure].to_numpy(float), m.scale,
                                           _rng(m.category, driver_id, now.date()))
-                if low <= base:
-                    continue  # diferença não sustentada pelas viagens do motorista
+                if low < base * PEER_MIN_RATIO:
+                    continue  # efeito mínimo não sustentado pelas viagens do motorista (D46)
                 ev = {"rate": round(float(row["rate"]), 3), "peer_median": round(med, 3), "ratio": round(ratio, 3),
                       "rate_p05": round(low, 3), "peers": len(agg) - 1, "trips": len(d), "vehicle_type": vtype,
                       "exposure": round(float(row["expo"]), 1), "harsh_brake": int(d["harsh_brake_count"].sum()),
@@ -204,28 +207,37 @@ def vehicle_fuel_trend(trips: pd.DataFrame, now: pd.Timestamp) -> list[Candidate
         r_rec = rec["fuel_real_scored"].sum() / rec["fuel_exp_scored"].sum()
         r_base = base["fuel_real_scored"].sum() / base["fuel_exp_scored"].sum()
         change = r_rec / r_base - 1
-        if change < 0.10:
-            continue
         rng = _rng("fuel", vid, now.date())
         real, exp_ = rec["fuel_real_scored"].to_numpy(float), rec["fuel_exp_scored"].to_numpy(float)
         idx = rng.integers(0, len(rec), size=(BOOTSTRAP, len(rec)))
-        low = float(np.quantile(real[idx].sum(1) / exp_[idx].sum(1) / r_base - 1, 0.05))
-        if low <= 0.03:
+        boot = real[idx].sum(1) / exp_[idx].sum(1)
+        trend = change >= 0.10 and float(np.quantile(boot / r_base - 1, 0.05)) > 0.03
+        persistent = r_rec >= FUEL_PERSIST_RATIO and float(np.quantile(boot, 0.05)) > 1 + (FUEL_PERSIST_RATIO - 1) / 2
+        if not (trend or persistent):
             continue
         l100 = lambda d: d["fuel_used_l"].sum() / max(d["distance_km"].sum(), 1e-9) * 100
         name = t["vehicle_name"].iloc[0]
-        ev = {"ratio_recent": round(r_rec, 4), "ratio_baseline": round(r_base, 4), "change": round(change, 4),
-              "change_p05": round(low, 4), "trips_recent": len(rec), "trips_baseline": len(base),
-              "l100_recent": round(l100(rec), 2), "l100_baseline": round(l100(base), 2)}
+        excess = max(change, r_rec - 1) if persistent else change
+        # descreve pelo critério de maior desvio (o histórico pode já conter parte da falha)
+        trend = trend and not (persistent and r_rec - 1 > change)
+        ev = {"kind": "trend" if trend else "persistent", "ratio_recent": round(r_rec, 4),
+              "ratio_baseline": round(r_base, 4), "change": round(change, 4),
+              "change_p05": round(float(np.quantile(boot / r_base - 1, 0.05)), 4), "trips_recent": len(rec),
+              "trips_baseline": len(base), "l100_recent": round(l100(rec), 2), "l100_baseline": round(l100(base), 2)}
+        if trend:
+            text = (f"{name}: consumo {br(change * 100)}% acima do próprio histórico nos últimos "
+                    f"{TREND_RECENT_DAYS} dias, já descontados rota, carga e velocidade ({br(r_rec, 2)} L por "
+                    f"litro esperado, contra {br(r_base, 2)} nos {TREND_BASE_DAYS} dias anteriores; "
+                    f"{br(ev['l100_recent'], 1)} contra {br(ev['l100_baseline'], 1)} L/100 km). ")
+        else:
+            text = (f"{name}: consumo {br((r_rec - 1) * 100)}% acima do esperado pelo modelo para as rotas, cargas e "
+                    f"velocidades dos últimos {TREND_RECENT_DAYS} dias ({br(r_rec, 2)} L por litro esperado; "
+                    f"{br(ev['l100_recent'], 1)} L/100 km). O desvio persiste e já faz parte do histórico recente. ")
         out.append(Candidate(
             dedup_key=f"VEHICLE_FUEL_TREND:{vid}", scope="VEHICLE", subject_id=str(vid),
-            category="VEHICLE_FUEL_TREND", severity="CRITICAL" if change >= 0.25 else "WARNING",
-            title="Consumo acima do histórico",
-            description=(f"{name}: consumo {br(change * 100)}% acima do próprio histórico nos últimos "
-                         f"{TREND_RECENT_DAYS} dias, já descontados rota, carga e velocidade ({br(r_rec, 2)} L por "
-                         f"litro esperado, contra {br(r_base, 2)} nos {TREND_BASE_DAYS} dias anteriores; "
-                         f"{br(ev['l100_recent'], 1)} contra {br(ev['l100_baseline'], 1)} L/100 km). "
-                         f"Verifique injetores, filtro de ar e pressão dos pneus."),
+            category="VEHICLE_FUEL_TREND", severity="CRITICAL" if excess >= 0.25 else "WARNING",
+            title="Consumo acima do histórico" if trend else "Consumo acima do esperado",
+            description=text + "Verifique injetores, filtro de ar e pressão dos pneus.",
             period_start=now - pd.Timedelta(days=TREND_RECENT_DAYS), period_end=now, evidence=ev))
     return out
 
@@ -240,16 +252,17 @@ class HealthRule:
     direction: int          # -1: queda é ruim; +1: alta é ruim
     warn: float
     crit: float
+    persist: float          # desvio em relação ao modelo que, sustentado, já é falha (independe do histórico)
     label: str
     advice: str
 
 
 HEALTH_RULES = (
-    HealthRule("oil_kpa", True, -1, 0.05, 0.12, "Pressão do óleo", "Programe inspeção do nível de óleo e da bomba."),
-    HealthRule("battery_v", True, -1, 0.025, 0.06, "Tensão de carga da bateria",
+    HealthRule("oil_kpa", True, -1, 0.05, 0.12, 0.08, "Pressão do óleo", "Programe inspeção do nível de óleo e da bomba."),
+    HealthRule("battery_v", True, -1, 0.025, 0.06, 0.04, "Tensão de carga da bateria",
                "Verifique alternador, correia e conexões."),
-    HealthRule("boost_kpa", True, -1, 0.10, 0.20, "Pressão do turbo", "Verifique mangueiras, abraçadeiras e intercooler."),
-    HealthRule("coolant_c", False, +1, 3.0, 6.0, "Temperatura do motor",
+    HealthRule("boost_kpa", True, -1, 0.10, 0.20, 0.15, "Pressão do turbo", "Verifique mangueiras, abraçadeiras e intercooler."),
+    HealthRule("coolant_c", False, +1, 3.0, 6.0, 4.0, "Temperatura do motor",
                "Verifique radiador, ventoinha e nível do líquido de arrefecimento."),
 )
 
@@ -284,26 +297,32 @@ def vehicle_health_drift(trips: pd.DataFrame, now: pd.Timestamp) -> list[Candida
             rec, base = daily[age < TREND_RECENT_DAYS], daily[age >= TREND_RECENT_DAYS]
             if len(rec) < 3 or len(base) < 7:
                 continue
-            delta = float(rec.mean() - base.mean()) * rule.direction  # > 0 = piora
-            if delta < rule.warn:
-                continue
+            delta = float(rec.mean() - base.mean()) * rule.direction  # > 0 = piora em relação ao histórico
+            level = float(rec.mean()) * rule.direction                  # > 0 = pior que o esperado pelo modelo
             alt = "greater" if rule.direction > 0 else "less"
-            p = float(stats.mannwhitneyu(rec, base, alternative=alt).pvalue)
-            if p >= 0.05:
+            trend = delta >= rule.warn and float(stats.mannwhitneyu(rec, base, alternative=alt).pvalue) < 0.05
+            # critério determinístico: com 3–5 dias úteis na semana, testes de postos não chegam a p < 0,05
+            persistent = level >= rule.persist and float((rec * rule.direction >= rule.persist / 2).mean()) >= 0.8
+            if not (trend or persistent):
                 continue
+            worst = max(delta, level) if persistent else delta
+            p = float(stats.mannwhitneyu(rec, base, alternative=alt).pvalue)
             unit = "%" if rule.relative else " °C"
             scale = 100 if rule.relative else 1
             word = "abaixo" if rule.direction < 0 else "acima"
-            ev = {"signal": rule.signal, "recent_dev": round(float(rec.mean()), 4),
-                  "baseline_dev": round(float(base.mean()), 4), "worsening": round(delta, 4), "p_value": round(p, 5),
-                  "days_recent": len(rec), "days_baseline": len(base), "relative": rule.relative}
+            ev = {"signal": rule.signal, "kind": "trend" if trend else "persistent",
+                  "recent_dev": round(float(rec.mean()), 4), "baseline_dev": round(float(base.mean()), 4),
+                  "worsening": round(delta, 4), "p_value": round(p, 5), "days_recent": len(rec),
+                  "days_baseline": len(base), "relative": rule.relative}
+            history = (f"nos {HEALTH_BASE_DAYS} dias anteriores: {br(base.mean() * scale, 1)}{unit}" if trend else
+                       "desvio persistente, já presente também nas semanas anteriores")
             out.append(Candidate(
                 dedup_key=f"VEHICLE_HEALTH_DRIFT:{vid}:{rule.signal}", scope="VEHICLE", subject_id=str(vid),
-                category="VEHICLE_HEALTH_DRIFT", severity="CRITICAL" if delta >= rule.crit else "WARNING",
+                category="VEHICLE_HEALTH_DRIFT", severity="CRITICAL" if worst >= rule.crit else "WARNING",
                 title=f"Desgaste progressivo: {rule.label.lower()}",
                 description=(f"{rule.label} do {name} está {br(abs(rec.mean()) * scale, 1)}{unit} {word} do esperado "
-                             f"para as condições de operação nos últimos {TREND_RECENT_DAYS} dias (nos "
-                             f"{HEALTH_BASE_DAYS} dias anteriores: {br(base.mean() * scale, 1)}{unit}). {rule.advice}"),
+                             f"para as condições de operação nos últimos {TREND_RECENT_DAYS} dias ({history}). "
+                             f"{rule.advice}"),
                 period_start=now - pd.Timedelta(days=TREND_RECENT_DAYS), period_end=now, evidence=ev))
     return out
 

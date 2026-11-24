@@ -194,3 +194,45 @@ simulador) e dos alertas do serviço de ML (`ML_*`). Nada a fazer.
 
 A rota `insights` em `app.routes.ts` não tem `permissionGuard`; quando os insights vierem da API, sugerimos
 `permissionGuard('analytics:view')`, que é a permissão exigida pelo endpoint.
+
+## 6. Cadastro e edição de usuários (ajustes necessários no frontend)
+
+Causa do "Erro ao criar usuário." genérico: o `user-form.component.ts` descarta a resposta da API. Erros que a API
+devolve (corpo `{ status, error, message }`):
+
+| Situação | Status | `message` (exemplo) |
+|---|---|---|
+| username com menos de 6 ou mais de 30 caracteres | `422` | `username: size must be between 6 and 30` |
+| e-mail inválido / senha vazia / perfil não informado | `422` | `email: must be a well-formed email address` |
+| username já existe | `409` | `Username already taken: joao.silva` |
+| e-mail já cadastrado (cadastro e edição) | `409` | `Email already registered: x@y.com` |
+| perfil (`roleId`) inexistente | `404` | `Role not found: …` |
+| sem permissão `users:create` / `users:management` | `403` | |
+
+Sugestões:
+- Validar `username` com `Validators.minLength(6)` e `maxLength(30)` no formulário (hoje só `required`); a mensagem de
+  `fieldError()` para `minlength` fala em "senha" e deve considerar o campo.
+- No `error:` do `subscribe`, mostrar mensagem conforme `error.status` (`409` → "Usuário ou e-mail já cadastrado",
+  `422` → exibir `error.error.message`) em vez do texto fixo.
+
+## 7. Ambiente de demonstração (nada a fazer no frontend)
+
+Para a apresentação existe uma plataforma paralela com 12 meses de histórico e insights reais
+(`docker compose --profile demo up -d --build` na raiz). O compose da raiz constrói a mesma imagem do frontend com
+`API_BASE_URL=http://localhost:8082/api/v1` e a publica em `http://localhost:8083`; o `docker-compose.yml` do
+frontend não foi alterado. Login: o admin da instalação; motoristas `demo.d01`…`demo.d10`.
+
+## 8. Respostas da API que mudaram (revisão de 2026-11-24)
+
+| Situação | Antes | Agora |
+|---|---|---|
+| Requisição sem token ou com token inválido/expirado | 403 ou 500 | **401** (o interceptor renova a sessão) |
+| Login de usuário desativado | entrava | **403** "User is disabled" (senha errada continua 401) |
+| Usuário desativado com sessão aberta | continuava usando | próxima requisição **401**; o refresh devolve **403** → mandar para o login |
+| Refresh com token expirado/inválido | 500 | **401** |
+| Iniciar viagem com veículo inativo / motorista desativado | permitido | **409** "Vehicle is inactive" / "Driver is disabled" |
+| Veículo com placa ou nº de série repetido | 500 | **409** com a mensagem |
+| `PUT /vehicles/{id}` sem o campo `active` | desativava o veículo | mantém o valor atual |
+| Perfil com nome repetido / apagar perfil em uso | 500 | **409** |
+
+Sugestão: no login, tratar 403 com a mensagem "Usuário desativado. Procure o administrador."

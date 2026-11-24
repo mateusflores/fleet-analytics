@@ -147,4 +147,19 @@ class JwtServiceTest {
                 .role(role)
                 .build();
     }
+
+    @Test
+    void expiredTokenIsReportedAsExpiredInsteadOfThrowing() {
+        JwtService shortLived = new JwtService(SECRET, -1000L, -1000L);
+        String token = shortLived.generateRefreshToken("testuser");
+        assertTrue(jwtService.isTokenExpired(token));
+    }
+
+    @Test
+    void tokenSignedWithAnotherKeyIsRejected() {
+        String other = Base64.getEncoder().encodeToString("another-secret-key-for-hmac-sha-256-tests!!".getBytes());
+        String foreign = new JwtService(other, 900000L, 604800000L).generateRefreshToken("testuser");
+        org.junit.jupiter.api.Assertions.assertThrows(io.jsonwebtoken.JwtException.class,
+                () -> jwtService.isTokenExpired(foreign));
+    }
 }

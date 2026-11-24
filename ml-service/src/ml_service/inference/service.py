@@ -13,6 +13,7 @@ import argparse
 import json
 import logging
 import os
+import time
 from pathlib import Path
 
 import pika
@@ -36,15 +37,54 @@ def load_settings(path: str | Path) -> dict:
     return cfg
 
 
-def connect(cfg: dict) -> pika.BlockingConnection:
+def connect(cfg: dict, attempts: int = 10, first_wait_s: float = 2.0) -> pika.BlockingConnection:
+    """Conecta ao RabbitMQ, tentando de novo com espera crescente (o broker pode ainda estar subindo)."""
     r = cfg["rabbitmq"]
-    return pika.BlockingConnection(pika.ConnectionParameters(
-        host=r["host"], port=r["port"], credentials=pika.PlainCredentials(r["user"], r["password"]), heartbeat=30))
+    params = pika.ConnectionParameters(host=r["host"], port=r["port"],
+                                       credentials=pika.PlainCredentials(r["user"], r["password"]), heartbeat=30)
+    wait = first_wait_s
+    for attempt in range(1, attempts + 1):
+        try:
+            return pika.BlockingConnection(params)
+        except pika.exceptions.AMQPConnectionError:
+            if attempt == attempts:
+                raise
+            log.warning("RabbitMQ indisponível em %s:%s (tentativa %d/%d); nova tentativa em %.0f s",
+                        r["host"], r["port"], attempt, attempts, wait)
+            time.sleep(wait)
+            wait = min(wait * 2, 30)
+    raise AssertionError("inalcançável")
 
 
 def build_engine(cfg: dict) -> StreamEngine:
     return StreamEngine(cfg.get("models_dir", "models"), cfg.get("vehicles", {}),
                         min_consecutive=cfg.get("min_consecutive", 2), cooldown_s=cfg.get("cooldown_s", 300))
+
+
+def make_handler(engine: StreamEngine, cfg: dict):
+    """Callback do consumidor: decodifica, processa e publica os eventos. Nunca propaga exceções de uma mensagem."""
+    props = pika.BasicProperties(content_type="application/json", delivery_mode=2)
+
+    def handle(ch, method, properties, body):
+        try:
+            payload = json.loads(body)
+        except ValueError:
+            log.warning("mensagem inválida descartada (%d bytes)", len(body))
+            return
+        if not isinstance(payload, dict):
+            log.warning("mensagem sem objeto JSON descartada")
+            return
+        try:
+            events = engine.on_message(payload)
+        except Exception:
+            # uma mensagem ruim não pode derrubar o consumidor (e perder o estado de todos os veículos)
+            log.exception("falha ao processar mensagem do veículo %s; descartada", payload.get("vehicleId"))
+            return
+        for event in events:
+            ch.basic_publish(cfg["exchange"], cfg["event_routing_key"], json.dumps(event, ensure_ascii=False).encode(), props)
+            log.info("evento %s [%s] veículo %s: %s", event["eventType"], event["severity"], event["vehicleId"], event["message"])
+
+    return handle
 
 
 def run(config_path: str) -> None:
@@ -54,17 +94,7 @@ def run(config_path: str) -> None:
     queue = channel.queue_declare(queue="", exclusive=True, auto_delete=True).method.queue
     for key in cfg["input_routing_keys"]:
         channel.queue_bind(queue=queue, exchange=cfg["exchange"], routing_key=key)
-    props = pika.BasicProperties(content_type="application/json", delivery_mode=2)
-
-    def handle(ch, method, properties, body):
-        try:
-            payload = json.loads(body)
-        except ValueError:
-            log.warning("mensagem inválida descartada (%d bytes)", len(body))
-            return
-        for event in engine.on_message(payload):
-            ch.basic_publish(cfg["exchange"], cfg["event_routing_key"], json.dumps(event, ensure_ascii=False).encode(), props)
-            log.info("evento %s [%s] veículo %s: %s", event["eventType"], event["severity"], event["vehicleId"], event["message"])
+    handle = make_handler(engine, cfg)
 
     channel.basic_consume(queue=queue, on_message_callback=handle, auto_ack=True)
     log.info("aguardando telemetria em %s (%s)", cfg["exchange"], ", ".join(cfg["input_routing_keys"]))

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -81,25 +82,41 @@ def run_once(cfg: dict, resolver: ModelResolver) -> dict:
     return {"trips_computed": trips, **result}
 
 
+ENV_OVERRIDES = {"INSIGHTS_INTERVAL_S": ("interval_s", int), "INSIGHTS_RETRY_S": ("retry_s", int),
+                 "INSIGHTS_INFERENCE_CONFIG": ("inference_config", str), "INSIGHTS_MODELS_DIR": ("models_dir", str)}
+
+
+def load_config(path: str | Path) -> dict:
+    """Configuração do YAML, com sobrescritas por variável de ambiente (útil no compose)."""
+    cfg = yaml.safe_load(Path(path).read_text())
+    for env, (key, cast) in ENV_OVERRIDES.items():
+        if os.environ.get(env):
+            cfg[key] = cast(os.environ[env])
+    return cfg
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default="configs/insights.yaml")
     ap.add_argument("--once", action="store_true")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    cfg = yaml.safe_load(Path(args.config).read_text())
+    cfg = load_config(args.config)
     inference = yaml.safe_load(Path(cfg["inference_config"]).read_text())
     resolver = ModelResolver(Path(cfg.get("models_dir", "models")), inference.get("vehicles", {}))
     while True:
+        wait = cfg.get("interval_s", 3600)
         try:
             log.info("execução: %s", run_once(cfg, resolver))
         except Exception:
+            # ex.: banco ainda subindo ou migrações da API ainda não aplicadas: tenta de novo mais cedo
             log.exception("falha na execução do motor de insights")
             if args.once:
                 raise
+            wait = cfg.get("retry_s", 60)
         if args.once:
             break
-        time.sleep(cfg.get("interval_s", 3600))
+        time.sleep(wait)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ api:
   base-url: ${API_BASE_URL:http://localhost:8080}
 
 mqtt:
-  broker-url: tcp://localhost:1883
+  broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}
   client-id: desktop-simulator
 
 simulation:

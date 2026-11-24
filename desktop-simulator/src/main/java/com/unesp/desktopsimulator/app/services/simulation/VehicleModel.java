@@ -145,6 +145,19 @@ public final class VehicleModel {
         return t;
     }
 
+    /** Parado com o motor ligado (partida ou parada), sem estar se movendo. */
+    public boolean isStationary() {
+        return phase == Phase.STARTING || phase == Phase.STOPPED;
+    }
+
+    /**
+     * Prolonga em {@code seconds} o tempo parado com o motor ligado (marcha lenta). Só tem efeito parado
+     * ({@link #isStationary()}): o motorista que espera com o motor ligado antes de sair ou depois de chegar.
+     */
+    public void extendIdle(double seconds) {
+        if (isStationary() && seconds > 0) phaseTimer += seconds;
+    }
+
     // =====================================================================================================
     // rota e paradas
 

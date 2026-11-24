@@ -79,3 +79,56 @@ def test_missing_model_signal_gives_no_detection(setup):
     models, raw = setup
     eng, events = _run(models, [{k: v for k, v in p.items() if k != "speedKmh"} for p in _payloads(raw, hot_from=100)])
     assert eng.stats["windows"] == 0 and not events
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# robustez: mensagens ruins não derrubam o serviço
+
+def test_malformed_values_and_timestamps_are_ignored_not_fatal(setup):
+    models, raw = setup
+    eng = StreamEngine(models, {VID: {"company": "co", "group": "g"}})
+    good = _payloads(raw)[:5]
+    assert eng.on_message({"vehicleId": VID, "timestamp": "not-a-date", "engineRpm": 900}) == []
+    assert eng.on_message({"vehicleId": VID, "timestamp": None}) == []
+    for p in good:
+        eng.on_message({**p, "engineRpm": "abc", "speedKmh": float("nan"), "engineTempC": True})
+    st = eng.streams[VID]
+    assert "rpm" not in st.acc and "speed_kmh" not in st.acc and "coolant_c" not in st.acc
+    assert "battery_v" in st.acc                               # os campos válidos continuam
+    assert eng.stats["ignored"] == 2
+
+
+def test_missing_company_model_or_group_disables_only_that_vehicle(setup, caplog):
+    models, raw = setup
+    eng = StreamEngine(models, {"a": {"company": "nope"}, "b": {"company": "co", "group": "ghost"},
+                                VID: {"company": "co", "group": "g"}})
+    p = _payloads(raw)[0]
+    assert eng.on_message({**p, "vehicleId": "a"}) == []
+    assert eng.on_message({**p, "vehicleId": "b"}) == []
+    eng.on_message(p)
+    assert VID in eng.streams and "a" not in eng.streams and "b" not in eng.streams
+    assert eng.stats["ignored"] == 2
+
+
+def test_consumer_callback_survives_engine_errors_and_publishes_events():
+    from ml_service.inference.service import make_handler
+
+    class Boom:
+        def on_message(self, payload):
+            if payload.get("vehicleId") == "bad":
+                raise RuntimeError("bug")
+            return [{"vehicleId": "ok", "eventType": "ML_OIL_KPA", "severity": "WARNING", "message": "m"}]
+
+    class Channel:
+        published = []
+
+        def basic_publish(self, exchange, key, body, props):
+            self.published.append((exchange, key, body))
+
+    ch = Channel()
+    handle = make_handler(Boom(), {"exchange": "amq.topic", "event_routing_key": "telemetry.event"})
+    handle(ch, None, None, b"{not json")
+    handle(ch, None, None, b"[1, 2]")
+    handle(ch, None, None, b'{"vehicleId": "bad"}')
+    handle(ch, None, None, b'{"vehicleId": "ok"}')
+    assert [(e, k) for e, k, _ in ch.published] == [("amq.topic", "telemetry.event")]

@@ -154,8 +154,11 @@ def load_events(conn: psycopg.Connection, since: datetime) -> pd.DataFrame:
 
 
 def load_open_insights(conn: psycopg.Connection) -> pd.DataFrame:
-    return _frame(conn, "SELECT id, dedup_key, status, severity FROM telemetry.insights "
-                        "WHERE status IN ('ACTIVE', 'ACKNOWLEDGED')")
+    df = _frame(conn, "SELECT id, dedup_key, status, severity, updated_at FROM telemetry.insights "
+                      "WHERE status IN ('ACTIVE', 'ACKNOWLEDGED')")
+    if not df.empty:
+        df["updated_at"] = pd.to_datetime(df["updated_at"], utc=True)
+    return df
 
 
 def load_dismissed(conn: psycopg.Connection, since: datetime) -> pd.DataFrame:

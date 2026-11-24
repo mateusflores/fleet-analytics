@@ -3,6 +3,8 @@ package com.unesp.desktopsimulator.app.services.simulation;
 /** Estilo de condução: limites de aceleração/frenagem, quanto do limite de velocidade o motorista usa e quando troca de marcha. */
 public enum DriverStyle {
     ECONOMIC("Econômico", 0.35, 0.8, 0.5, 0.95, 0, true),
+    /** Intermediário: referência dos motoristas "comuns" no histórico de demonstração. */
+    NORMAL("Normal", 0.5, 1.1, 0.75, 0.97, 100, true),
     AGGRESSIVE("Agressivo", 0.8, 1.8, 1.2, 1.06, 250, false);
 
     private final String label;

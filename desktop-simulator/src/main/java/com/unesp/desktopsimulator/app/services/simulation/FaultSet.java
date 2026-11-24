@@ -21,10 +21,17 @@ public final class FaultSet {
 
     private static final class Active {
         final FaultSeverity severity;
+        /** Intensidade fixa (0–1), sem rampa; NaN = usar a severidade com rampa. */
+        final double fixedIntensity;
         volatile double onsetS = Double.NaN;
 
         Active(FaultSeverity severity) {
+            this(severity, Double.NaN);
+        }
+
+        Active(FaultSeverity severity, double fixedIntensity) {
             this.severity = severity;
+            this.fixedIntensity = fixedIntensity;
         }
     }
 
@@ -32,6 +39,21 @@ public final class FaultSet {
 
     public void add(FaultType type, FaultSeverity severity) {
         active.compute(type, (k, old) -> old != null && old.severity == severity ? old : new Active(severity));
+    }
+
+    /**
+     * Ativa a falha com intensidade fixa (0–1), já plena e sem a rampa de {@link #RAMP_S} s. Usado pelo gerador de
+     * histórico, em que a falha evolui ao longo de dias (a intensidade de cada dia é calculada fora daqui).
+     */
+    public void setIntensity(FaultType type, double intensity) {
+        double clamped = Math.max(0, Math.min(1, intensity));
+        if (clamped == 0) {
+            active.remove(type);
+            return;
+        }
+        FaultSeverity nearest = clamped >= 0.75 ? FaultSeverity.SEVERE
+                : clamped >= 0.375 ? FaultSeverity.MODERATE : FaultSeverity.LIGHT;
+        active.put(type, new Active(nearest, clamped));
     }
 
     public void remove(FaultType type) {
@@ -66,6 +88,7 @@ public final class FaultSet {
      */
     public double progress(FaultType type, double simTimeS) {
         Active a = active.get(type);
+        if (a != null && !Double.isNaN(a.fixedIntensity)) return 1.0;
         if (a == null || Double.isNaN(a.onsetS)) return 0;
         return Math.max(0, Math.min(1.0, (simTimeS - a.onsetS) / RAMP_S));
     }
@@ -74,6 +97,7 @@ public final class FaultSet {
     double level(FaultType type, double simTimeS) {
         Active a = active.get(type);
         if (a == null) return 0;
+        if (!Double.isNaN(a.fixedIntensity)) return a.fixedIntensity;
         if (Double.isNaN(a.onsetS)) a.onsetS = simTimeS;
         return a.severity.factor() * Math.min(1.0, (simTimeS - a.onsetS) / RAMP_S);
     }

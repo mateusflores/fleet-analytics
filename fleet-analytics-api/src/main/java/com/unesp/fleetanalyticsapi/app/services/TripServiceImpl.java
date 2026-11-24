@@ -39,6 +39,14 @@ public class TripServiceImpl implements TripService {
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found: " + request.vehicleId()));
 
+        if (!Boolean.TRUE.equals(vehicle.getActive())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Vehicle is inactive");
+        }
+
+        if (!driver.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Driver is disabled");
+        }
+
         if (tripRepository.existsByVehicleIdAndEndTimeIsNull(request.vehicleId())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Vehicle already has an active trip");

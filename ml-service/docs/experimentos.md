@@ -172,6 +172,57 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 - **Limitação:** a avaliação com histórico de meses e cenários por motorista depende do gerador de histórico da
   Fase 4.
 
+## E14 — Histórico de demonstração: avaliação do motor de insights (2026-11-24)
+- **Dados** (`configs/demo-history.yaml`, `ml_service.insights.demo.build`): 365 dias (2025-11-24 a 2026-11-23),
+  8 caminhões médios, 10 motoristas sorteados por dia (cada motorista dirige 6–8 caminhões no ano), segunda a
+  sábado, temperatura ambiente sazonal. Simulado a 1 Hz pelo `HistoryGenerator` (mesmo `VehicleModel` do simulador)
+  e reduzido a métricas por viagem pelo mesmo `compute_trip_metrics` do caminho ao vivo: **6.950 viagens, 266
+  alertas fixos**, ~3 min com 8 processos. Os 90 primeiros dias servem só de linha de base; o motor é rodado ao fim
+  de cada dia dos 275 seguintes (`demo.evaluate`, mesmas regras e mesma reconciliação do executor).
+- **Separação no simulador (um mês):** tempo acima de 90 km/h por 10 h dirigidas: econômicos 0 min, normais
+  12–16, agressivos 136–151; direção brusca por 100 km: 1,3–1,6 / 8–10 / 84–88; ociosidade > 5 min: 2–6% (d07:
+  30%). Bico injetor a 0,6 → consumo real ÷ esperado 1,21; bomba de óleo a 0,3 → −15%.
+- **Calibração do radiador** (temperatura real − esperada, 5 dias, ambiente 22/30 °C): intensidade 0,6 → +2,1/+2,8 °C
+  e nenhum alerta (termostato e ventoinha compensam); 0,8 → +4,1/+4,7 °C; 0,9 → +5,4/+6,2 °C e os primeiros alertas
+  de superaquecimento; 1,0 → +12/+13 °C e dezenas de alertas. O S7 passou de 0,6 para 0,9.
+- **Resultados** (`reports/insights/e14*.json`):
+
+| Rodada | Detectados | Episódios falsos (insight-dias) | Relacionados | Reaberturas |
+|---|---|---|---|---|
+| a. regras da Fase 2, S7 a 0,6 | 10/11 (S7 não) | 44 (131) | 33 | 61 |
+| b. + efeito mínimo confirmado, diferença absoluta e histerese (D46), mesmos dados | 10/11 | 1 (2) | 4 | 2 |
+| c. + S7 a 0,9 e desvio persistente em relação ao modelo (D47) | **11/11** | **1 (2)** | 4 | 4 |
+
+| Cenário | Insight | Atraso (dias) | Cobertura | Observação |
+|---|---|---|---|---|
+| S1 motorista agressivo | velocidade, direção brusca, rotação | 1 ¹ | 100% | crítico (≈ 10×) |
+| S2 motor ligado parado | ociosidade | 1 ¹ | 100% | crítico (28% × 3%) |
+| S3 muda de hábito (há 100 dias) | velocidade / brusca / rotação | 5 / 4 / 7 | 93–96% | janela de 30 dias |
+| S4 bico injetor (rampa 10 d) | consumo | 8 | 83% | depois de detectado, aberto até o fim |
+| S5 alternador (rampa 30 d, consertado em 50 d) | bateria | 20 | 60% | **resolvido 3 dias após o conserto** (S8) |
+| S6 bomba de óleo (rampa 45 d) | óleo | 20 | 74% | crítico; aberto até o fim |
+| S7 radiador (rampa 60 d até 0,9) | temperatura | 54 | 55% | **8 dias antes** de os alertas se repetirem (62 d) |
+
+¹ condição presente desde o início da avaliação.
+
+- **Rodada a — por que tantos falsos:** motoristas normais apareciam "26% acima da mediana" (ex.: ociosidade 4% ×
+  3%): a mediana mistura perfis econômicos e normais, o *bootstrap* só exigia ficar acima da mediana (não do efeito
+  mínimo) e o insight abria e fechava a cada pequena oscilação (61 reaberturas). **Rodada b:** os ajustes da D46
+  eliminaram 43 dos 44 falsos sem perder detecções (atrasos de S3 subiram de 3–5 para 4–7 dias).
+- **Rodada b — falha estável "esquecida":** S6/S7 eram detectados, mas o insight se resolvia sozinho quando a falha
+  parava de piorar, porque a linha de base (60 dias do próprio veículo) passava a conter a falha (cobertura do S7:
+  29%). O critério persistente da D47 mantém o insight aberto enquanto o desvio em relação ao modelo existir.
+- **Restantes:** 1 falso (d09, ociosidade 5% × 3% por 2 dias). Relacionados: d07 (o motorista de S2) aparece 3
+  vezes com velocidade +56%: artefato do gerador (o tempo parado entra na duração prevista da viagem e altera o
+  tipo de trecho percorrido); e o alternador de S5 também gerou alertas recorrentes de bateria fraca (coerente).
+- **Carga no banco da demo** (`demo.load`, perfil `demo`): 6.950 viagens (6.680 com métricas BACKFILL), 266
+  alertas, 2,5 M leituras e posições a 1 Hz das 2 últimas semanas em ~50 s; o executor normal calculou as 270
+  viagens recentes e abriu 12 insights (os 7 cenários + 2 de frota); segunda execução só atualiza.
+- **Limitações:** dados sintéticos do próprio simulador (o modelo de valor esperado foi treinado nele, então o
+  consumo esperado é quase perfeito: 1,00 ± 0,003 nos caminhões sadios — numa frota real o viés por veículo será
+  maior e os limiares persistentes da D47 precisarão de calibração); eventos de ML (`ML_*`) não são gerados no
+  histórico (só alertas fixos); uma única semente.
+
 ## Problemas em aberto
 1. EDA desatualizada (E03).
 2. O summary do T270 fala em 4 dias de viagem, mas os timestamps cobrem ~25 h.
@@ -180,7 +231,10 @@ Recall por janela nas falhas sintéticas (severidade 0,25 / 0,5 / 1,0):
 5. Empresa A: baixa sensibilidade a desvios pequenos em óleo, consumo e turbo (limiares largos — investigar a cauda dos resíduos; testar persistência de alarme).
 6. IsolationForest sem utilidade na configuração atual; comparar com autoencoder (X2).
 7. Curva de aprendizado (X3: horas de dados × desempenho) não feita — o requisito de "≥ 10 h" continua sendo hipótese.
-8. Inferência: falta testar com a API e o frontend reais; faltam Containerfile e entrada no `compose.yaml`; os UUIDs em `configs/inference.yaml` são de exemplo.
+8. ~~Inferência: Containerfile e compose~~ (D42; testado ponta a ponta com a API em 2026-11-24). Falta testar com o frontend real.
 9. Avaliar o ML com as falhas geradas pelo próprio simulador (`DatasetGenerator --fault`, D32), além das injetadas pelo pipeline.
 10. Vazamento de combustível: janela de 60 s é curta para a resolução do sensor de nível; testar inclinação em janela longa (10–30 min).
-11. Insights: o gerador de dados atribui o estilo de condução ao veículo, não ao motorista — a Fase 4 precisa de estilo por motorista para avaliar as regras de motoristas ponta a ponta.
+11. ~~Estilo de condução por motorista~~ (resolvido no `HistoryGenerator`, E14).
+12. Insights: repetir o E14 com outras sementes (média e desvio dos atrasos) e com eventos de ML no histórico.
+13. `IsolationForest(n_jobs=-1)` abre processos em todos os núcleos a cada predição: no gerador foi contido com `LOKY_MAX_CPU_COUNT=1`; avaliar `n_jobs=1` no serviço de inferência.
+14. d07 (motorista com muita ociosidade) aparece com velocidade acima dos colegas — artefato do gerador a investigar.

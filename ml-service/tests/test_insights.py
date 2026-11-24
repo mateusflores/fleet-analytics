@@ -178,3 +178,57 @@ def test_planner_insert_update_resolve_reopen_and_snooze():
     assert ("insert", "e") in by                           # descartado, mas agravou
     assert ("resolve", "3") in by
     assert len(actions) == 5
+
+
+def test_planner_resolves_only_after_hysteresis():
+    open_ = pd.DataFrame([{"id": "1", "dedup_key": "recent", "status": "ACTIVE", "severity": "WARNING",
+                           "updated_at": NOW - pd.Timedelta(hours=6)},
+                          {"id": "2", "dedup_key": "stale", "status": "ACTIVE", "severity": "WARNING",
+                           "updated_at": NOW - pd.Timedelta(hours=49)}])
+    actions = plan([], open_, pd.DataFrame(), NOW)
+    assert [(a.kind, a.insight_id) for a in actions] == [("resolve", "2")]
+
+
+def test_peer_rule_requires_relevant_absolute_difference():
+    """+40% sobre a mediana, mas só ~1 ponto percentual de ociosidade: não vira insight; 3× (≈ 6 p.p.) vira."""
+    trips, events = _history()
+    for factor, expected in ((1.4, set()), (3.0, {"d2"})):
+        t = trips.copy()
+        t.loc[t["driver_id"] == "d2", "excessive_idle_s"] *= factor
+        found = {c.subject_id for c in evaluate(t, events, NOW, POLICY) if c.category == "DRIVER_IDLE"}
+        assert found == expected, factor
+
+
+def test_stable_fault_stays_detected_by_persistent_deviation():
+    """Óleo 10% abaixo do esperado há 50 dias: a linha de base do próprio veículo já está degradada (sem tendência),
+    mas o desvio em relação ao modelo persiste — o insight continua."""
+    from ml_service.insights.rules import vehicle_health_drift
+    trips, _ = _history()
+    old = trips["start_time"] >= NOW - pd.Timedelta(days=50)
+    sel = (trips["vehicle_id"] == "v4") & old
+
+    def degrade(h):
+        h = {**h, "signals": {**h["signals"], "oil_kpa": {**h["signals"]["oil_kpa"]}}}
+        h["signals"]["oil_kpa"]["actual"] *= 0.90
+        return h
+    trips.loc[sel, "health"] = trips.loc[sel, "health"].map(degrade)
+    found = [c for c in vehicle_health_drift(trips, NOW) if c.subject_id == "v4"]
+    assert [c.evidence["kind"] for c in found] == ["persistent"]
+    assert "desvio persistente" in found[0].description
+
+
+def test_persistent_deviation_works_with_four_recent_days():
+    """Semana com feriado/fim de semana: só 4 dias recentes ainda bastam para o critério persistente."""
+    from ml_service.insights.rules import vehicle_health_drift
+    trips, _ = _history()
+    recent_days = trips["start_time"] >= NOW - pd.Timedelta(days=7)
+    keep = ~recent_days | (trips["start_time"] >= NOW - pd.Timedelta(days=4))
+    trips = trips[keep].copy()
+    sel = (trips["vehicle_id"] == "v4") & (trips["start_time"] >= NOW - pd.Timedelta(days=50))
+
+    def degrade(h):
+        h = {**h, "signals": {**h["signals"], "oil_kpa": {**h["signals"]["oil_kpa"]}}}
+        h["signals"]["oil_kpa"]["actual"] *= 0.90
+        return h
+    trips.loc[sel, "health"] = trips.loc[sel, "health"].map(degrade)
+    assert [c.subject_id for c in vehicle_health_drift(trips, NOW) if c.subject_id == "v4"] == ["v4"]

@@ -1,0 +1,16 @@
+# Serviço de inferência — versão usada no compose (mesmo conteúdo de inference.yaml, mais `default`).
+# Serviço de inferência. Credenciais podem vir de RABBITMQ_HOST / RABBITMQ_PORT / RABBITMQ_USER / RABBITMQ_PASSWORD.
+rabbitmq: {host: localhost, port: 5672, user: admin, password: admin}
+models_dir: models
+min_consecutive: 2      # janelas seguidas com alarme antes de gerar evento
+cooldown_s: 300         # intervalo mínimo entre eventos do mesmo tipo para o mesmo veículo
+
+# Veículo da plataforma (UUID) -> empresa/grupo cujo modelo deve ser usado.
+# `assume_warm: true` dispensa os 20 min de aquecimento (use quando a telemetria começa com o motor já quente).
+# A chave `default` (opcional) vale para veículos não listados.
+vehicles:
+  "00000000-0000-0000-0000-00000000000a": {company: empresa-a, group: kenworth-t270-px7, assume_warm: true}
+  "00000000-0000-0000-0000-00000000000b": {company: empresa-b, group: caminhao-medio-sim, assume_warm: true}
+  # Veículos cadastrados pela interface têm UUIDs aleatórios: todos usam o modelo do caminhão médio simulado.
+  # Sem assume_warm: o simulador pode partir a frio, e os primeiros 20 min de motor ligado ficam fora da avaliação.
+  default: {company: empresa-b, group: caminhao-medio-sim}
