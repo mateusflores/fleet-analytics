@@ -4,6 +4,7 @@ import { Machine } from '../../models/machine/machine.model';
 import { Observable } from 'rxjs';
 import { PaginatedResponse } from '../../responses/paginated-response.model';
 import { MachineTelemetrySeriesPoint } from '../../models/machine/telemetry/machine-telemetry-series-point.model';
+import { MachineTelemetry } from '../../models/machine/telemetry/machine-telemetry.model';
 import { environment } from '../../../environments/environment';
 import { SseService } from '../sse/sse.service';
 import { AuthService } from '../auth/auth.service';
@@ -46,7 +47,7 @@ export class MachineService {
     return this._httpClient.get<MachineTelemetrySeriesPoint[]>(`${this._vehicleTelemetryUrl}?vehicleId=${_machineId}&from=${_periodStart.toISOString()}&to=${new Date().toISOString()}`);
   }
 
-  public streamMachineTelemetry(id: string): Observable<any> {
-    return this._sseService.connect<any>(`${this._vehicleTelemetryUrl}/sse?vehicleId=${id}&token=${this._authService.getAccessToken()}`);
+  public streamMachineTelemetry(id: string): Observable<MachineTelemetry> {
+    return this._sseService.connect<MachineTelemetry>(`${this._vehicleTelemetryUrl}/sse?vehicleId=${id}&token=${this._authService.getAccessToken()}`);
   }
 }

@@ -13,7 +13,7 @@ import {
 } from 'ng-apexcharts';
 import { MachineService } from '../../../services/machine/machine.service';
 import { MachineTelemetrySeriesPoint } from '../../../models/machine/telemetry/machine-telemetry-series-point.model';
-import { TelemetryMetric } from '../../../models/machine/telemetry/machine-telemetry-metric.type';
+import { TELEMETRY_METRIC_FIELD, TelemetryMetric } from '../../../models/machine/telemetry/machine-telemetry-metric.type';
 import { TinyColor } from '@ctrl/tinycolor';
 import { MachineTelemetry } from '../../../models/machine/telemetry/machine-telemetry.model';
 
@@ -51,7 +51,7 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
   chart = viewChild<ChartComponent>('chart');
   chartSeries = signal<ApexAxisChartSeries>([]);
   chartOptions!: Partial<ChartOptions>;
-  chartData: { x: number; y: number }[] = [];
+  chartData: { x: number; y: number | null }[] = [];
 
   ngOnInit(): void {
     this.configChart();
@@ -59,45 +59,14 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes)
-    if (this.newData) {
-      switch (this.metric) {
-        case 'rpm':
-          this.chartData.push({
-            x: new Date(this.newData.timestamp).getTime(),
-            y: this.newData.engineRpm ?? null
-          });
-          break;
-        case 'temperature':
-          this.chartData.push({
-            x: new Date(this.newData.timestamp).getTime(),
-            y: this.newData.engineTempC ?? null
-          });
-          break;
-        case 'fuel':
-          this.chartData.push({
-            x: new Date(this.newData.timestamp).getTime(),
-            y: this.newData.fuelLevelPct ?? null
-          });
-          break;
-        case 'battery':
-          this.chartData.push({
-            x: new Date(this.newData.timestamp).getTime(),
-            y: this.newData.batteryVoltage ?? null
-          });
-          break;
-        case 'odometer':
-          this.chartData.push({
-            x: new Date(this.newData.timestamp).getTime(),
-            y: this.newData.odometerKm ?? null
-          });
-          break;
-        default:
-          break;
+    if (changes['newData'] && this.newData) {
+      const point = this.toChartPoint(this.newData);
+      if (point) {
+        this.chartData.push(point);
+        this.chartSeries.set([
+          { name: 'Média', type: 'line', data: this.chartData }
+        ]);
       }
-      this.chartSeries.set([
-        { name: 'Média', type: 'line', data: this.chartData }
-      ]);
     }
     if (changes['periodStart'] && 
       !changes['periodStart'].firstChange && 
@@ -204,35 +173,18 @@ export class TelemetryChartComponent implements OnInit, OnChanges {
       });
   }
 
-  private mapToMetric(points: MachineTelemetrySeriesPoint[]): { x: number; y: number }[] {
-    switch (this.metric) {
-      case 'rpm':
-        return points.map((p) => ({
-          x: new Date(p.timestamp).getTime(),
-          y: p.engineRpm
-        }));
-      case 'temperature':
-        return points.map((p) => ({
-          x: new Date(p.timestamp).getTime(),
-          y: p.engineTempC
-        }));
-      case 'fuel':
-        return points.map((p) => ({
-          x: new Date(p.timestamp).getTime(),
-          y: p.fuelLevelPct
-        }));
-      case 'battery':
-        return points.map((p) => ({
-          x: new Date(p.timestamp).getTime(),
-          y: p.batteryVoltage
-        }));
-      case 'odometer':
-        return points.map((p) => ({
-          x: new Date(p.timestamp).getTime(),
-          y: p.odometerKm
-        }));
-      default:
-        return [];
+  private mapToMetric(points: MachineTelemetrySeriesPoint[]): { x: number; y: number | null }[] {
+    return points
+      .map((p) => this.toChartPoint(p))
+      .filter((p): p is { x: number; y: number | null } => p !== null);
+  }
+
+  /** Ponto do gráfico para a métrica; `null` (sem ponto) quando a leitura não traz o sinal. */
+  private toChartPoint(reading: MachineTelemetry): { x: number; y: number | null } | null {
+    const value = reading[TELEMETRY_METRIC_FIELD[this.metric]];
+    if (typeof value !== 'number') {
+      return null;
     }
+    return { x: new Date(reading.timestamp).getTime(), y: value };
   }
 }

@@ -215,14 +215,14 @@
         <app-card
           class="metric"
           [title]="'RPM'"
-          [value]="machineTelemetry ? (+machineTelemetry.engineRpm.toFixed(2)).toString() : '--'"
+          [value]="formatReading('engineRpm', '')"
           [icon]="'speed'"
           [iconColor]="'#155dfc'">
         </app-card>
         <app-card
           class="metric"
           [title]="'Temperatura'"
-          [value]="machineTelemetry ? +machineTelemetry.engineTempC.toFixed(2).toString() + '°C' : '--'"
+          [value]="formatReading('engineTempC', '°C')"
           [icon]="'device_thermostat'"
           [iconColor]="'#f54a00'"
           [lightenFactor]="47">
@@ -230,7 +230,7 @@
         <app-card
           class="metric"
           [title]="'Combustível'"
-          [value]="machineTelemetry ? +machineTelemetry.fuelLevelPct.toFixed(2).toString() + '%' : '--'"
+          [value]="formatReading('fuelLevelPct', '%')"
           [icon]="'opacity'"
           [iconColor]="'#00a63e'"
           [lightenFactor]="60">
@@ -238,7 +238,7 @@
         <app-card
           class="metric"
           [title]="'Odômetro'"
-          [value]="machineTelemetry ? +machineTelemetry.odometerKm.toFixed(2).toString() + ' km' : '--'"
+          [value]="formatReading('odometerKm', ' km')"
           [icon]="'show_chart'"
           [iconColor]="'#9810fa'"
           [lightenFactor]="43">
@@ -246,10 +246,34 @@
         <app-card
           class="metric"
           [title]="'Nível de bateria'"
-          [value]="machineTelemetry ? +machineTelemetry.batteryVoltage.toFixed(2).toString() + 'V' : '--'"
+          [value]="formatReading('batteryVoltage', 'V')"
           [icon]="'battery_charging_full'"
           [iconColor]="'#e3db66'"
           [lightenFactor]="43">
+        </app-card>
+        <app-card
+          class="metric"
+          [title]="'Velocidade'"
+          [value]="formatReading('speedKmh', ' km/h')"
+          [icon]="'directions_car'"
+          [iconColor]="'#0891b2'"
+          [lightenFactor]="50">
+        </app-card>
+        <app-card
+          class="metric"
+          [title]="'Consumo instantâneo'"
+          [value]="formatReading('fuelRateLph', ' L/h')"
+          [icon]="'local_gas_station'"
+          [iconColor]="'#db2777'"
+          [lightenFactor]="45">
+        </app-card>
+        <app-card
+          class="metric"
+          [title]="'Pressão do óleo'"
+          [value]="formatReading('oilKpa', ' kPa')"
+          [icon]="'oil_barrel'"
+          [iconColor]="'#ca8a04'"
+          [lightenFactor]="50">
         </app-card>
       </section>
     </div>
@@ -337,6 +361,36 @@
         [colorAverageChart]="'#e3db66'"
         [lightenFactor]="60"
         [unit]="'V'"
+        [periodStart]="chartPeriods[selectedPeriod]"
+        [newData]="machineTelemetry">
+      </app-telemetry-chart>
+      <app-telemetry-chart
+        [title]="'Velocidade'"
+        [machineId]="id"
+        [metric]="'speed'"
+        [colorAverageChart]="'#0891b2'"
+        [lightenFactor]="60"
+        [unit]="' km/h'"
+        [periodStart]="chartPeriods[selectedPeriod]"
+        [newData]="machineTelemetry">
+      </app-telemetry-chart>
+      <app-telemetry-chart
+        [title]="'Consumo instantâneo'"
+        [machineId]="id"
+        [metric]="'fuelRate'"
+        [colorAverageChart]="'#db2777'"
+        [lightenFactor]="60"
+        [unit]="' L/h'"
+        [periodStart]="chartPeriods[selectedPeriod]"
+        [newData]="machineTelemetry">
+      </app-telemetry-chart>
+      <app-telemetry-chart
+        [title]="'Pressão do óleo'"
+        [machineId]="id"
+        [metric]="'oilPressure'"
+        [colorAverageChart]="'#ca8a04'"
+        [lightenFactor]="60"
+        [unit]="' kPa'"
         [periodStart]="chartPeriods[selectedPeriod]"
         [newData]="machineTelemetry">
       </app-telemetry-chart>

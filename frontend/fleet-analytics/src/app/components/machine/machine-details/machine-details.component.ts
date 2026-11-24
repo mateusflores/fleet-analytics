@@ -205,6 +205,15 @@ export class MachineDetailsComponent implements OnInit {
     return null;
   }
 
+  /** Valor do card de métrica; `--` sem leitura ou quando o dispositivo não envia o sinal. */
+  formatReading(field: keyof MachineTelemetry, unit = ''): string {
+    const value = this.machineTelemetry?.[field];
+    if (typeof value !== 'number') {
+      return '--';
+    }
+    return `${+value.toFixed(2)}${unit}`;
+  }
+
   changeSelectedPeriod(index: number): void {
     if (index >= 0 && index < this.chartPeriods.length) {
       this.selectedPeriod = index;
