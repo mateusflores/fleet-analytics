@@ -12,6 +12,7 @@ import { Role } from '../../../models/role/role.model';
 import { RoleService } from '../../../services/role/role.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { UserService } from '../../../services/user/user.service';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-user-form',
@@ -36,7 +37,7 @@ export class UserFormComponent implements OnInit {
   private readonly _snackbar = inject(SnackbarService);
 
   readonly form = this._formBuilder.nonNullable.group({
-    username: ['', Validators.required],
+    username: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(30)]],
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     phone: ['', Validators.required],
@@ -82,7 +83,9 @@ export class UserFormComponent implements OnInit {
       },
       error: (error) => {
         console.error(error);
-        this._snackbar.error('Erro ao criar usuário.');
+        this._snackbar.error(apiErrorMessage(error, 'Erro ao criar usuário.', {
+          404: 'Perfil não encontrado. Recarregue a página e escolha outro perfil.'
+        }));
         this.isSaving = false;
       }
     });
@@ -102,6 +105,9 @@ export class UserFormComponent implements OnInit {
     }
     if (errs['email']) {
       return 'Informe um e-mail válido.';
+    }
+    if (controlName === 'username' && (errs['minlength'] || errs['maxlength'])) {
+      return 'O nome de usuário deve ter entre 6 e 30 caracteres.';
     }
     const minLengthErr = errs['minlength'] as { requiredLength: number } | undefined;
     if (minLengthErr) {

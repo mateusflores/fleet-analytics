@@ -11,6 +11,7 @@ import { User } from '../../../models/user/user.model';
 import { UserService } from '../../../services/user/user.service';
 import { AuthService } from '../../../services/auth/auth.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-user-details',
@@ -96,7 +97,7 @@ export class UserDetailsComponent implements OnInit {
       error: (error) => {
         console.error('Erro ao atualizar usuário:', error);
         this.isSaving = false;
-        this._snackbar.error('Erro ao atualizar usuário. Tente novamente.');
+        this._snackbar.error(apiErrorMessage(error, 'Erro ao atualizar usuário. Tente novamente.'));
       }
     });
   }
