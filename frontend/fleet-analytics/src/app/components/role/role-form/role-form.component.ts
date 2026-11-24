@@ -14,6 +14,7 @@ import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { UserService } from '../../../services/user/user.service';
 import { PermissionLabelPipe } from '../../../shared/pipes/permission-label.pipe';
 import { AuthService } from '../../../services/auth/auth.service';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-role-form',
@@ -173,7 +174,7 @@ export class RoleFormComponent implements OnInit {
       error: (error) => {
         console.error(error);
         this._snackbar.error(
-          isEdit ? 'Erro ao atualizar perfil.' : 'Erro ao criar perfil.'
+          apiErrorMessage(error, isEdit ? 'Erro ao atualizar perfil.' : 'Erro ao criar perfil.')
         );
         this.isSaving = false;
       }

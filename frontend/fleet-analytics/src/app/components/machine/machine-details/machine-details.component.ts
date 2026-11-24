@@ -24,6 +24,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Insight } from '../../../models/insight/insight.model';
 import { InsightService } from '../../../services/insight/insight.service';
 import { InsightCardComponent } from '../../insight/insight-card/insight-card.component';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-machine-details',
@@ -207,7 +208,7 @@ export class MachineDetailsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error saving machine:', error);
-        this._snackbar.error('Erro ao atualizar máquina. Tente novamente.');
+        this._snackbar.error(apiErrorMessage(error, 'Erro ao atualizar máquina. Tente novamente.'));
         this.isSaving = false;
       }
     });

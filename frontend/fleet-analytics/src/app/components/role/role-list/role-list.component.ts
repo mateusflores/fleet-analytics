@@ -13,6 +13,7 @@ import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { RoleListCardComponent } from '../role-list-card/role-list-card.component';
 import { getPtBrPaginatorIntl } from '../../../shared/config/paginator/paginator-intl-pt-br';
 import { AuthService } from '../../../services/auth/auth.service';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-role-list',
@@ -125,7 +126,9 @@ export class RoleListComponent {
       },
       error: (error) => {
         console.error(error);
-        this._snackbar.error('Erro ao excluir perfil. Tente novamente.');
+        this._snackbar.error(apiErrorMessage(error, 'Erro ao excluir perfil. Tente novamente.', {
+          409: 'Este perfil está em uso por usuários e não pode ser excluído.'
+        }));
         this.deletingId.set(null);
       }
     });

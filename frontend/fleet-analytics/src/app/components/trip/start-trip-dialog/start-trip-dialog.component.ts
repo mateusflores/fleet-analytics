@@ -11,6 +11,7 @@ import { MachineService } from '../../../services/machine/machine.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { TripService } from '../../../services/trip/trip.service';
 import { UserService } from '../../../services/user/user.service';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-start-trip-dialog',
@@ -26,11 +27,6 @@ export class StartTripDialogComponent implements OnInit {
   private readonly _tripService = inject(TripService);
   private readonly _userService = inject(UserService);
   private readonly _dialogRef = inject(MatDialogRef<StartTripDialogComponent>);
-  private readonly errorMessages: Record<string, string> = {
-    'Driver already has an active trip': 'Motorista já tem uma viagem ativa',
-    'Vehicle already has an active trip': 'Veículo já tem uma viagem ativa'
-  }
-
   readonly form = this._formBuilder.nonNullable.group({ vehicleId: ['', Validators.required] });
   machines: Machine[] = [];
   isLoadingMachines = true;
@@ -73,8 +69,7 @@ export class StartTripDialogComponent implements OnInit {
         this._dialogRef.close(true); 
       },
       error: (error) => { 
-        const message = this.errorMessages[error.message] || 'Erro ao iniciar viagem.';
-        this._snackbar.error(message); 
+        this._snackbar.error(apiErrorMessage(error, 'Erro ao iniciar viagem.'));
         this.isStarting = false; 
       }
     });

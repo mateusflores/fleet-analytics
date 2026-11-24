@@ -15,6 +15,7 @@ import { MachineService } from '../../../services/machine/machine.service';
 import { SnackbarService } from '../../../services/snackbar/snackbar.service';
 import { MachineFuelType } from '../../../models/machine/mahcine-fuel-type.model';
 import { MachineFuelTypeLabelPipe } from '../../../shared/pipes/machine-fuel-type-label.pipe';
+import { apiErrorMessage } from '../../../shared/utils/api-error';
 
 @Component({
   selector: 'app-add-machine',
@@ -80,8 +81,8 @@ export class AddMachineComponent {
         this._snackbar.success('Máquina criada com sucesso.');
         this._router.navigate(['/machines']);
       },
-      error: () => {
-        this._snackbar.error('Erro ao criar máquina.');
+      error: (error) => {
+        this._snackbar.error(apiErrorMessage(error, 'Erro ao criar máquina.'));
         this.isAddingMachine = false;
       }
     });
