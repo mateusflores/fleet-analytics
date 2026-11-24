@@ -277,6 +277,30 @@
         </app-card>
       </section>
     </div>
+    @if (canViewInsights) {
+      <section class="machine-insights" aria-labelledby="machine-insights-title">
+        <div class="section-title">
+          <h2 id="machine-insights-title">Insights do veículo</h2>
+          <a routerLink="/insights">Ver todos</a>
+        </div>
+        @if (isLoadingInsights) {
+          <div class="insights-state"><mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner></div>
+        } @else if (vehicleInsights.length === 0) {
+          <p class="insights-state">Nenhum insight aberto para este veículo.</p>
+        } @else {
+          <div class="insight-grid">
+            @for (insight of vehicleInsights; track insight.id) {
+              <app-insight-card
+                [insight]="insight"
+                [showSubjectLink]="false"
+                (changed)="onInsightChanged($event)"
+                (stale)="loadVehicleInsights()">
+              </app-insight-card>
+            }
+          </div>
+        }
+      </section>
+    }
     <section class="machine-charts">
       <div class="charts-periods">
         <button

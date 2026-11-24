@@ -1,0 +1,195 @@
+:host {
+  display: block;
+}
+
+.insight-card {
+  display: flex;
+  height: 100%;
+  gap: 16px;
+  padding: 20px 22px 12px;
+  border: 1px solid;
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+.severity-warning {
+  background: #fff8ee;
+  border-color: #f6c98d;
+}
+
+.severity-info {
+  background: #f0f6ff;
+  border-color: #b9d4ff;
+}
+
+.severity-critical {
+  background: #fff3f4;
+  border-color: #ffc2c8;
+}
+
+.icon-container {
+  flex: 0 0 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  color: #475569;
+}
+
+.severity-warning .icon-container {
+  color: #c66a00;
+}
+
+.severity-info .icon-container {
+  color: #1f63f2;
+}
+
+.severity-critical .icon-container {
+  color: #dc2626;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(23, 32, 51, .08);
+  color: #465166;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.status-acknowledged {
+  background: #e0ecff;
+  color: #1f4fae;
+}
+
+.status-resolved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-dismissed {
+  background: #e4e4e7;
+  color: #52525b;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-title-row h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.card-title-row time {
+  flex: 0 0 auto;
+  color: #6f7785;
+  font-size: .78rem;
+  white-space: nowrap;
+}
+
+.description {
+  margin: 8px 0 0;
+  color: #4e5868;
+  font-size: .92rem;
+  line-height: 1.45;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 12px;
+  color: #737c8c;
+  font-size: .78rem;
+}
+
+.card-meta mat-icon {
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px 16px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .7);
+}
+
+.evidence dt {
+  color: #737c8c;
+  font-size: .72rem;
+}
+
+.evidence dd {
+  margin: 2px 0 0;
+  color: #172033;
+  font-size: .88rem;
+  font-weight: 600;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.card-actions button,
+.card-actions a {
+  color: #334155;
+  font-size: .85rem;
+}
+
+.card-actions mat-progress-spinner {
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.dismiss-btn {
+  color: #6b7280;
+}
+
+.spacer {
+  flex: 1;
+}
+
+@media (max-width: 720px) {
+  .insight-card {
+    padding: 18px 18px 10px;
+  }
+
+  .card-title-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .spacer {
+    display: none;
+  }
+}

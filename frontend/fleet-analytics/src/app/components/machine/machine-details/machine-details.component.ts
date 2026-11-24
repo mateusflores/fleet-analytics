@@ -21,6 +21,9 @@ import { AuthService } from '../../../services/auth/auth.service';
 import { MachineFuelType } from '../../../models/machine/mahcine-fuel-type.model';
 import { SseService } from '../../../services/sse/sse.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Insight } from '../../../models/insight/insight.model';
+import { InsightService } from '../../../services/insight/insight.service';
+import { InsightCardComponent } from '../../insight/insight-card/insight-card.component';
 
 @Component({
   selector: 'app-machine-details',
@@ -37,7 +40,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     MachineTypeLabelPipe,
     MachineFuelTypeLabelPipe,
     CardComponent,
-    TelemetryChartComponent
+    TelemetryChartComponent,
+    InsightCardComponent
   ],
   templateUrl: './machine-details.component.html',
   styleUrl: './machine-details.component.css'
@@ -49,6 +53,7 @@ export class MachineDetailsComponent implements OnInit {
   private readonly _router = inject(Router);
   private readonly _formBuilder = inject(FormBuilder);
   private readonly _snackbar = inject(SnackbarService);
+  private readonly _insightService = inject(InsightService);
   private destroyRef = inject(DestroyRef);
   readonly authService: AuthService = inject(AuthService);
 
@@ -67,6 +72,10 @@ export class MachineDetailsComponent implements OnInit {
   isEditing = false;
   isSaving = false;
   isLoading = true;
+
+  readonly canViewInsights = this.authService.hasPermission('analytics:view');
+  vehicleInsights: Insight[] = [];
+  isLoadingInsights = false;
 
   readonly editForm = this._formBuilder.nonNullable.group({
     serialNumber: ['', Validators.required],
@@ -101,6 +110,7 @@ export class MachineDetailsComponent implements OnInit {
         this.machine = machine;
         this.isLoading = false;
         this.getVehicleTelemetry();
+        this.loadVehicleInsights();
       },
       error: (error) => {
         console.error('Error fetching machine details:', error);
@@ -124,6 +134,30 @@ export class MachineDetailsComponent implements OnInit {
           console.error('Error streaming machine telemetry:', error);
         }
       });
+  }
+
+  /** Insights abertos do veículo (ACTIVE + ACKNOWLEDGED, padrão da API). */
+  loadVehicleInsights(): void {
+    if (!this.canViewInsights) {
+      return;
+    }
+    this.isLoadingInsights = true;
+    this._insightService.getInsights({ scope: 'VEHICLE', subjectId: this.id, size: 6 }).subscribe({
+      next: (page) => {
+        this.vehicleInsights = page.content;
+        this.isLoadingInsights = false;
+      },
+      error: () => {
+        this.vehicleInsights = [];
+        this.isLoadingInsights = false;
+      }
+    });
+  }
+
+  onInsightChanged(updated: Insight): void {
+    this.vehicleInsights = updated.status === 'ACTIVE' || updated.status === 'ACKNOWLEDGED'
+      ? this.vehicleInsights.map((insight) => insight.id === updated.id ? updated : insight)
+      : this.vehicleInsights.filter((insight) => insight.id !== updated.id);
   }
 
   startEdit(): void {

@@ -52,7 +52,8 @@ export const routes: Routes = [
       },
       {
         path: 'insights',
-        component: InsightListComponent
+        component: InsightListComponent,
+        canActivate: [permissionGuard('analytics:view')]
       },
       {
         path: 'settings/fleet-policy',

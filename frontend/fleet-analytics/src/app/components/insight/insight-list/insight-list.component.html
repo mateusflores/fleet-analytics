@@ -12,25 +12,67 @@
       </div>
     </div>
 
+    <div class="insight-filters">
+      <mat-button-toggle-group
+        [(ngModel)]="scopeFilter"
+        (change)="onFilterChange()"
+        hideSingleSelectionIndicator
+        aria-label="Filtrar por escopo">
+        <mat-button-toggle value="">Todos</mat-button-toggle>
+        <mat-button-toggle value="VEHICLE">Veículos</mat-button-toggle>
+        <mat-button-toggle value="DRIVER">Motoristas</mat-button-toggle>
+        <mat-button-toggle value="FLEET">Frota</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+        <mat-label>Categoria</mat-label>
+        <mat-select [(ngModel)]="categoryFilter" (selectionChange)="onFilterChange()">
+          <mat-option value="">Todas</mat-option>
+          @for (category of categories; track category[0]) {
+            <mat-option [value]="category[0]">{{ category[1] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+        <mat-label>Situação</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()">
+          <mat-option value="OPEN">Abertos</mat-option>
+          <mat-option value="RESOLVED">Resolvidos</mat-option>
+          <mat-option value="DISMISSED">Descartados</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
     @if (isLoadingInsights) {
       <div class="loading-state"><mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner></div>
-    } @else if (aiInsights.length === 0) {
-      <p class="empty-state">Nenhum insight disponível no momento.</p>
+    } @else if (insightsError) {
+      <div class="empty-state">
+        <p>{{ insightsError }}</p>
+        <button mat-button class="load-more-btn" (click)="loadInsights()">Tentar novamente</button>
+      </div>
+    } @else if (insights.length === 0) {
+      <p class="empty-state">Nenhum insight encontrado para os filtros selecionados.</p>
     } @else {
       <div class="insight-grid">
-        @for (insight of aiInsights; track insight.title) {
-          <article class="insight-card" [class]="'insight-card type-' + insight.type.toLowerCase()">
-            <div class="icon-container"><mat-icon>{{ insightIcon(insight.type) }}</mat-icon></div>
-            <div class="card-content">
-              <div class="card-title-row">
-                <h3>{{ insight.title }}</h3>
-                @if (insight.createdAt) { <time>{{ insight.createdAt | date:'dd/MM, HH:mm' }}</time> }
-              </div>
-              <p>{{ insight.description }}</p>
-            </div>
-          </article>
+        @for (insight of insights; track insight.id) {
+          <app-insight-card
+            [insight]="insight"
+            (changed)="onInsightChanged($event)"
+            (stale)="loadInsights()">
+          </app-insight-card>
         }
       </div>
+      @if (totalInsights > pageSize) {
+        <mat-paginator
+          class="paginator"
+          [length]="totalInsights"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          [hidePageSize]="true"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      }
     }
   </section>
 

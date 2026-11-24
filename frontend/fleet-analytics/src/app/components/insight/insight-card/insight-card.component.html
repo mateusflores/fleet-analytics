@@ -1,0 +1,81 @@
+<article class="insight-card" [class]="'insight-card severity-' + insight.severity.toLowerCase()">
+  <div class="icon-container"><mat-icon>{{ icon }}</mat-icon></div>
+
+  <div class="card-content">
+    <div class="card-tags">
+      <span class="tag">{{ insight.category | insightCategoryLabel }}</span>
+      @if (insight.status !== 'ACTIVE') {
+        <span class="tag tag--status" [class]="'tag tag--status status-' + insight.status.toLowerCase()">
+          {{ insight.status | insightStatusLabel }}
+        </span>
+      }
+    </div>
+
+    <div class="card-title-row">
+      <h3>{{ insight.title }}</h3>
+      <time [attr.datetime]="insight.updatedAt" matTooltip="Última atualização">
+        {{ insight.updatedAt | date:'dd/MM, HH:mm' }}
+      </time>
+    </div>
+
+    <p class="description">{{ insight.description }}</p>
+
+    <div class="card-meta">
+      <span>
+        <mat-icon inline>{{ insight.scope === 'FLEET' ? 'local_shipping' : insight.scope === 'DRIVER' ? 'person' : 'directions_car' }}</mat-icon>
+        {{ insight.scope | insightScopeLabel }}@if (insight.subjectName) {: {{ insight.subjectName }}}
+      </span>
+      <span>
+        <mat-icon inline>date_range</mat-icon>
+        {{ insight.periodStart | date:'dd/MM' }} a {{ insight.periodEnd | date:'dd/MM/yyyy' }}
+      </span>
+    </div>
+
+    @if (showEvidence) {
+      <dl class="evidence">
+        @for (item of evidence; track item.label) {
+          <div>
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
+          </div>
+        }
+      </dl>
+    }
+
+    <div class="card-actions">
+      @if (evidence.length > 0) {
+        <button mat-button type="button" (click)="showEvidence = !showEvidence">
+          <mat-icon>{{ showEvidence ? 'expand_less' : 'expand_more' }}</mat-icon>
+          {{ showEvidence ? 'Ocultar detalhes' : 'Ver detalhes' }}
+        </button>
+      }
+      @if (vehicleLink) {
+        <a mat-button [routerLink]="vehicleLink">
+          <mat-icon>open_in_new</mat-icon>
+          Ver veículo
+        </a>
+      }
+      <span class="spacer"></span>
+      @if (isOpen) {
+        @if (insight.status === 'ACTIVE') {
+          <button mat-button type="button" [disabled]="!!pendingAction" (click)="acknowledge()">
+            @if (pendingAction === 'ACKNOWLEDGED') {
+              <mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>
+            } @else {
+              <mat-icon>done</mat-icon>
+            }
+            Marcar como visto
+          </button>
+        }
+        <button mat-button type="button" class="dismiss-btn" [disabled]="!!pendingAction" (click)="dismiss()">
+          @if (pendingAction === 'DISMISSED') {
+            <mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>
+          } @else {
+            <mat-icon>close</mat-icon>
+          }
+          Descartar
+        </button>
+      }
+    </div>
+  </div>
+</article>

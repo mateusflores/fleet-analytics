@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { AiInsight } from '../../models/insight/ai-insight.model';
+import { Observable } from 'rxjs';
+import { Insight, InsightFilter, InsightUserStatus } from '../../models/insight/insight.model';
 import { DeterministicAlert } from '../../models/insight/deterministic-alert.model';
 import { PaginatedResponse } from '../../responses/paginated-response.model';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { SseService } from '../sse/sse.service';
 import { AuthService } from '../auth/auth.service';
@@ -16,34 +16,36 @@ export class InsightService {
   private readonly _authService = inject(AuthService);
   private readonly _eventsUrl = `${environment.apiBaseUrl}/telemetry/events`;
 
-  private readonly aiInsights: AiInsight[] = [
-    {
-      title: 'Manutenção preventiva recomendada',
-      description: 'Dois veículos estão se aproximando do intervalo programado de manutenção.',
-      type: 'WARNING',
-      createdAt: '2026-07-27T20:09:31.000Z'
-    },
-    {
-      title: 'Melhoria na eficiência de combustível',
-      description: 'A eficiência média de combustível da frota aumentou 12% nos últimos 30 dias.',
-      type: 'INFO',
-      createdAt: '2026-07-27T19:39:31.000Z'
-    },
-    {
-      title: 'Pico de temperatura detectado',
-      description: 'Foi identificado um padrão incomum de temperatura durante o horário de operação.',
-      type: 'CRITICAL',
-      createdAt: '2026-07-27T18:39:31.000Z'
-    },
-    {
-      title: 'Oportunidade de reduzir tempo ocioso',
-      description: 'A análise indica potencial de redução de 8% no tempo ocioso em toda a frota.',
-      type: 'WARNING'
-    }
-  ];
+  private readonly _insightsUrl = `${environment.apiBaseUrl}/insights`;
 
-  getAiInsights(): Observable<AiInsight[]> {
-    return of(this.aiInsights);
+  /** Lista paginada, mais recentes (`updatedAt`) primeiro. */
+  getInsights(filter: InsightFilter = {}): Observable<PaginatedResponse<Insight>> {
+    let params = new HttpParams()
+      .set('page', filter.page ?? 0)
+      .set('size', filter.size ?? 20)
+      .set('sort', 'updatedAt,desc');
+    if (filter.status?.length) {
+      params = params.set('status', filter.status.join(','));
+    }
+    if (filter.scope) {
+      params = params.set('scope', filter.scope);
+    }
+    if (filter.subjectId) {
+      params = params.set('subjectId', filter.subjectId);
+    }
+    if (filter.category) {
+      params = params.set('category', filter.category);
+    }
+    return this._httpClient.get<PaginatedResponse<Insight>>(this._insightsUrl, { params });
+  }
+
+  getInsight(id: string): Observable<Insight> {
+    return this._httpClient.get<Insight>(`${this._insightsUrl}/${id}`);
+  }
+
+  /** Marca como visto ou descarta; devolve o insight atualizado. */
+  updateInsightStatus(id: string, status: InsightUserStatus): Observable<Insight> {
+    return this._httpClient.patch<Insight>(`${this._insightsUrl}/${id}`, { status });
   }
 
   getDeterministicAlerts(): Observable<DeterministicAlert[]> {
