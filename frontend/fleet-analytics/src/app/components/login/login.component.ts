@@ -57,8 +57,12 @@ export class LoginComponent implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         this.isSubmitting = false;
-        if (error.status === 401 || error.status === 403) {
+        if (error.status === 401) {
           this.errorMessage = 'Usuário ou senha inválidos.';
+          return;
+        }
+        if (error.status === 403) {
+          this.errorMessage = 'Usuário desativado. Procure o administrador.';
           return;
         }
         this.errorMessage = 'Não foi possível entrar. Tente novamente.';

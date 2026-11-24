@@ -26,7 +26,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if ((error.status !== 401 && error.status !== 403) || isAuthEndpoint) {
+      // 403 = sem permissão: repassa ao componente. Só 401 (token ausente/expirado) renova a sessão.
+      if (error.status !== 401 || isAuthEndpoint) {
         return throwError(() => error);
       }
 
@@ -47,7 +48,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
           return next(retryReq).pipe(
             catchError((retryError: HttpErrorResponse) => {
-              if (retryError.status === 401 || retryError.status === 403) {
+              if (retryError.status === 401) {
                 authService.logout();
               }
               return throwError(() => retryError);

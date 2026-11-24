@@ -13,6 +13,8 @@ interface NavItem {
   label: string;
   icon: string;
   route: string;
+  /** Exibe o item só para quem tem a permissão (as rotas já usam o mesmo `permissionGuard`). */
+  permission?: string;
 }
 
 @Component({
@@ -43,7 +45,7 @@ export class AppComponent {
     { initialValue: this._router.url.startsWith('/login') }
   );
 
-  readonly navItems: NavItem[] = [
+  private readonly _navItems: NavItem[] = [
     {
       label: 'Home',
       icon: 'home',
@@ -52,27 +54,38 @@ export class AppComponent {
     {
       label: 'Máquinas',
       icon: 'precision_manufacturing',
-      route: '/machines'
+      route: '/machines',
+      permission: 'vehicles:view'
     },
     {
       label: 'Viagens',
       icon: 'route',
-      route: '/trips'
+      route: '/trips',
+      permission: 'travel:read'
     },
     {
       label: 'Perfis',
       icon: 'badge',
-      route: '/roles'
+      route: '/roles',
+      permission: 'roles:read'
     },
     {
       label: 'Usuários',
       icon: 'group',
-      route: '/users'
+      route: '/users',
+      permission: 'users:read'
     },
     {
       label: 'Insights',
       icon: 'lightbulb_outline',
-      route: '/insights'
+      route: '/insights',
+      permission: 'analytics:view'
+    },
+    {
+      label: 'Políticas da frota',
+      icon: 'tune',
+      route: '/settings/fleet-policy',
+      permission: 'analytics:view'
     },
     {
       label: 'Perfil',
@@ -80,6 +93,21 @@ export class AppComponent {
       route: '/profile'
     }
   ];
+
+  /** Recalculado a cada navegação (o login troca o token e navega), não a cada detecção de mudanças. */
+  readonly navItems = toSignal(
+    this._router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      startWith(null),
+      map(() => this.visibleNavItems())
+    ),
+    { initialValue: [] as NavItem[] }
+  );
+
+  private visibleNavItems(): NavItem[] {
+    const authorities = this._authService.getAuthorities();
+    return this._navItems.filter((item) => !item.permission || authorities.includes(item.permission));
+  }
 
   onLogout(event: Event): void {
     event.preventDefault();

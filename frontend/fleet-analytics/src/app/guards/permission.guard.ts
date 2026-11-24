@@ -24,6 +24,6 @@ export function permissionGuard(
       ? authService.hasAllPermissions(...required)
       : authService.hasAnyPermission(...required);
 
-    return hasAccess ? true : router.createUrlTree(['/dashboard']);
+    return hasAccess ? true : router.createUrlTree(['/']);
   };
 }
