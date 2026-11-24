@@ -1,20 +1,7 @@
 import { Routes } from '@angular/router';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { MachineListComponent } from './components/machine/machine-list/machine-list.component';
-import { AddMachineComponent } from './components/machine/add-machine/add-machine.component';
-import { MachineDetailsComponent } from './components/machine/machine-details/machine-details.component';
-import { ProfileComponent } from './components/profile/profile.component';
 import { LoginComponent } from './components/login/login.component';
-import { RoleListComponent } from './components/role/role-list/role-list.component';
-import { RoleFormComponent } from './components/role/role-form/role-form.component';
-import { UserListComponent } from './components/user/user-list/user-list.component';
-import { UserFormComponent } from './components/user/user-form/user-form.component';
-import { UserDetailsComponent } from './components/user/user-details/user-details.component';
-import { TripListComponent } from './components/trip/trip-list/trip-list.component';
-import { InsightListComponent } from './components/insight/insight-list/insight-list.component';
 import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
-import { FleetPolicyComponent } from './components/fleet-policy/fleet-policy.component';
 import { HomeComponent } from './components/home/home.component';
 
 export const routes: Routes = [
@@ -32,67 +19,67 @@ export const routes: Routes = [
       },
       {
         path: 'machines',
-        component: MachineListComponent,
+        loadComponent: () => import('./components/machine/machine-list/machine-list.component').then((m) => m.MachineListComponent),
         canActivate: [permissionGuard('vehicles:view')]
       },
       {
         path: 'machines/details/:id',
-        component: MachineDetailsComponent,
+        loadComponent: () => import('./components/machine/machine-details/machine-details.component').then((m) => m.MachineDetailsComponent),
         canActivate: [permissionGuard('vehicles:view')]
       },
       {
         path: 'machines/add',
-        component: AddMachineComponent,
+        loadComponent: () => import('./components/machine/add-machine/add-machine.component').then((m) => m.AddMachineComponent),
         canActivate: [permissionGuard('vehicles:create')]
       },
       {
         path: 'trips',
-        component: TripListComponent,
+        loadComponent: () => import('./components/trip/trip-list/trip-list.component').then((m) => m.TripListComponent),
         canActivate: [permissionGuard('travel:read')]
       },
       {
         path: 'insights',
-        component: InsightListComponent,
+        loadComponent: () => import('./components/insight/insight-list/insight-list.component').then((m) => m.InsightListComponent),
         canActivate: [permissionGuard('analytics:view')]
       },
       {
         path: 'settings/fleet-policy',
-        component: FleetPolicyComponent,
+        loadComponent: () => import('./components/fleet-policy/fleet-policy.component').then((m) => m.FleetPolicyComponent),
         canActivate: [permissionGuard('analytics:view')]
       },
       {
         path: 'roles',
-        component: RoleListComponent,
+        loadComponent: () => import('./components/role/role-list/role-list.component').then((m) => m.RoleListComponent),
         canActivate: [permissionGuard('roles:read')]
       },
       {
         path: 'roles/add',
-        component: RoleFormComponent,
+        loadComponent: () => import('./components/role/role-form/role-form.component').then((m) => m.RoleFormComponent),
         canActivate: [permissionGuard('roles:create')]
       },
       {
         path: 'roles/edit/:id',
-        component: RoleFormComponent,
+        loadComponent: () => import('./components/role/role-form/role-form.component').then((m) => m.RoleFormComponent),
         canActivate: [permissionGuard('roles:read')]
       },
       {
         path: 'users',
-        component: UserListComponent,
+        loadComponent: () => import('./components/user/user-list/user-list.component').then((m) => m.UserListComponent),
         canActivate: [permissionGuard('users:read')]
       },
       {
         path: 'users/add',
-        component: UserFormComponent,
+        loadComponent: () => import('./components/user/user-form/user-form.component').then((m) => m.UserFormComponent),
         canActivate: [permissionGuard('users:create')]
       },
       {
         path: 'users/details/:username',
-        component: UserDetailsComponent,
+        loadComponent: () => import('./components/user/user-details/user-details.component').then((m) => m.UserDetailsComponent),
         canActivate: [permissionGuard('users:management')]
       },
       {
         path: 'profile',
-        component: ProfileComponent
+        loadComponent: () => import('./components/profile/profile.component').then((m) => m.ProfileComponent)
       }
     ]
   },
