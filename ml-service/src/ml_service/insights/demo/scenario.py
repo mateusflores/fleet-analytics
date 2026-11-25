@@ -32,7 +32,7 @@ class DemoConfig:
 
     @classmethod
     def load(cls, path: str | Path, end: date | None = None) -> "DemoConfig":
-        return cls(yaml.safe_load(Path(path).read_text()), end or date.today())
+        return cls(yaml.safe_load(Path(path).read_text()), end or date.today() - timedelta(days=1))
 
     @property
     def seed(self) -> int:

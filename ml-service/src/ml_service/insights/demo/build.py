@@ -38,7 +38,11 @@ DEMO_VEHICLE_MODEL = {"default": {"company": "empresa-b", "group": "caminhao-med
 
 
 def simulator_classpath(out: Path) -> str:
-    """Compila o desktop-simulator e devolve o classpath (classes + dependências)."""
+    """Compila o desktop-simulator e devolve o classpath (classes + dependências).
+
+    Na imagem da demo o simulador já vem compilado: `DEMO_SIMULATOR_CLASSPATH` dispensa o Maven."""
+    if os.environ.get("DEMO_SIMULATOR_CLASSPATH"):
+        return os.environ["DEMO_SIMULATOR_CLASSPATH"]
     cp_file = (out / "classpath.txt").resolve()
     subprocess.run(["./mvnw", "-q", "compile", "dependency:build-classpath", f"-Dmdep.outputFile={cp_file}"],
                    cwd=SIMULATOR_DIR, check=True)
@@ -110,7 +114,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default="configs/demo-history.yaml")
     ap.add_argument("--out", default="data/demo")
-    ap.add_argument("--end-date", type=date.fromisoformat, help="último dia do histórico (padrão: hoje)")
+    ap.add_argument("--end-date", type=date.fromisoformat, help="último dia do histórico (padrão: ontem)")
     ap.add_argument("--jobs", type=int, default=3, help="meses gerados em paralelo")
     ap.add_argument("--months", type=int, help="só os últimos N meses (calibração)")
     a = ap.parse_args()

@@ -9,9 +9,9 @@
 Por segurança, recusa um banco que tenha viagens de veículos que não são da demo. `--reset` apaga só o que é da
 demo (e todos os insights) antes de carregar.
 
-Uso (banco da demo do compose, perfil `demo`):
-  DEMO_DATABASE_URL=postgresql://<usuário>:<senha>@localhost:5433/<banco> ADMIN_PASSWORD=<senha do admin> \\
-  python -m ml_service.insights.demo.load --api http://localhost:8082/api/v1 [--reset]
+No compose da demo (`demo/compose.yaml`) isto é feito automaticamente por `demo.seed`. Uso manual:
+  DEMO_DATABASE_URL=postgresql://<usuário>:<senha>@localhost:5432/<banco> ADMIN_PASSWORD=<senha do admin> \\
+  python -m ml_service.insights.demo.load --api http://localhost:8080/api/v1 [--reset]
 """
 
 from __future__ import annotations
@@ -109,7 +109,7 @@ def check_demo_database(conn: psycopg.Connection) -> None:
     count = other["count"] if isinstance(other, dict) else other[0]
     if count:
         raise SystemExit(f"o banco tem {count} viagens de veículos que não são da demo: use o banco da demo "
-                         "(perfil `demo` do compose), não o banco principal")
+                         "(demo/compose.yaml), não o banco principal")
 
 
 def reset(conn: psycopg.Connection, vehicle_ids: list[str]) -> None:
@@ -198,7 +198,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--demo", default="data/demo")
     ap.add_argument("--config", default="configs/demo-history.yaml")
-    ap.add_argument("--api", default="http://localhost:8082/api/v1")
+    ap.add_argument("--api", default="http://localhost:8080/api/v1")
     ap.add_argument("--admin-user", default="admin")
     ap.add_argument("--reset", action="store_true", help="apaga os dados da demo (e os insights) antes de carregar")
     a = ap.parse_args()

@@ -1,0 +1,13 @@
+# Contexto de build da raiz do repositório — hoje só demo/Containerfile o usa: lista branca do que a imagem precisa.
+*
+!desktop-simulator/mvnw
+!desktop-simulator/pom.xml
+!desktop-simulator/.mvn
+!desktop-simulator/src
+!ml-service/pyproject.toml
+!ml-service/src
+!ml-service/configs
+!ml-service/models
+ml-service/models/scania_lgbm*
+**/__pycache__
+**/*.egg-info

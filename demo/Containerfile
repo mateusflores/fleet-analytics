@@ -1,0 +1,43 @@
+# Imagem de ML da demonstração (contexto: raiz do repositório; ver demo/compose.yaml).
+# É a imagem do ml-service mais o gerador de histórico do desktop-simulator (Java), para que a primeira
+# inicialização gere e carregue os 12 meses de dados sem nada instalado na máquina.
+#   inferência: python -m ml_service.inference.service --config configs/inference.compose.yaml
+#   insights:   python -m ml_service.insights.demo.seed && python -m ml_service.insights.run ...
+
+# ---- simulador: classes + dependências (sem empacotar o app Spring)
+FROM eclipse-temurin:25-jdk AS simulator
+WORKDIR /sim
+COPY desktop-simulator/mvnw desktop-simulator/pom.xml ./
+COPY desktop-simulator/.mvn .mvn
+RUN chmod +x mvnw && ./mvnw -q -B dependency:resolve
+COPY desktop-simulator/src src
+RUN ./mvnw -q -B compile dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=target/lib
+
+FROM eclipse-temurin:25-jre AS jre
+
+# ---- ml-service + JRE
+FROM python:3.12-slim
+# LightGBM depende do OpenMP
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=jre /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk \
+    PATH=/opt/java/openjdk/bin:$PATH
+
+WORKDIR /app
+COPY ml-service/pyproject.toml ./
+COPY ml-service/src src
+RUN pip install --no-cache-dir .
+COPY ml-service/configs configs
+COPY ml-service/models models
+
+COPY --from=simulator /sim/target/classes /opt/simulator/classes
+COPY --from=simulator /sim/target/lib /opt/simulator/lib
+ENV DEMO_SIMULATOR_CLASSPATH="/opt/simulator/classes:/opt/simulator/lib/*" \
+    DEMO_DATA_DIR=/data/demo \
+    PYTHONUNBUFFERED=1
+
+# /data/demo pertence ao usuário ml: o volume nomeado herda a permissão na primeira montagem
+RUN useradd --system --uid 10001 ml && mkdir -p /data/demo && chown -R ml /app /data
+USER ml
+CMD ["python", "-m", "ml_service.inference.service", "--config", "configs/inference.compose.yaml"]

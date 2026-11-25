@@ -1,0 +1,127 @@
+# Demonstração completa do Fleet Analytics, sem configuração:
+#   docker compose -f demo/compose.yaml up -d --build
+#
+# Sobe banco, RabbitMQ, API, serviços de ML e frontend nas portas padrão (as mesmas da plataforma principal: pare-a
+# antes). Na primeira inicialização, o serviço ml-insights gera 12 meses de histórico simulado (volume demo_history)
+# e o carrega no banco; só então passa a reavaliar os insights periodicamente. Acompanhe com
+#   docker compose -f demo/compose.yaml logs -f ml-insights      (pronto quando aparecer "demo pronta")
+#
+# Frontend: http://localhost:8081 (admin / admin). Para recomeçar do zero: down -v.
+# Todas as credenciais abaixo são só da demo; podem ser trocadas por variáveis de ambiente.
+name: fleet-analytics-demo
+
+x-db-env: &db-env
+  DATABASE_URL: jdbc:postgresql://db:5432/fleet
+  DATABASE_USERNAME: fleet
+  DATABASE_PASSWORD: ${DEMO_DB_PASSWORD:-fleet-demo}
+
+x-rabbit-env: &rabbit-env
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_USER: admin
+  RABBITMQ_PASSWORD: ${DEMO_RABBITMQ_PASSWORD:-admin}
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg18
+    environment:
+      POSTGRES_DB: fleet
+      POSTGRES_USER: fleet
+      POSTGRES_PASSWORD: ${DEMO_DB_PASSWORD:-fleet-demo}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleet -d fleet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "1883:1883"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: ${DEMO_RABBITMQ_PASSWORD:-admin}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ../fleet-analytics-api/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../fleet-analytics-api/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+
+  api:
+    build:
+      context: ../fleet-analytics-api
+      dockerfile: Containerfile
+    ports:
+      - "8080:8080"
+    environment:
+      <<: [*db-env, *rabbit-env]
+      JWT_SECRET: ${DEMO_JWT_SECRET:-Ob/Z64btbjSQ9UD0YUjsJMOissrXVXzFWF0/pyls/9AAQxkd764s+3oVvmWa3hnX}
+      ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ml-inference:
+    build:
+      context: ..
+      dockerfile: demo/Containerfile
+    image: fleet-analytics-demo-ml:latest
+    command: ["python", "-m", "ml_service.inference.service", "--config", "configs/inference.compose.yaml"]
+    environment:
+      <<: *rabbit-env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Primeira inicialização: gera e carrega o histórico (demo.seed); depois, o motor de insights contínuo.
+  ml-insights:
+    image: fleet-analytics-demo-ml:latest
+    pull_policy: never
+    command:
+      - sh
+      - -c
+      - python -m ml_service.insights.demo.seed &&
+        exec python -m ml_service.insights.run --config configs/insights.compose.yaml
+    environment:
+      <<: *db-env
+      DEMO_API_URL: http://api:8080/api/v1
+      ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin}
+      DEMO_BUILD_JOBS: ${DEMO_BUILD_JOBS:-}
+      INSIGHTS_INTERVAL_S: ${INSIGHTS_INTERVAL_S:-300}
+    volumes:
+      - demo_history:/data/demo
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+      ml-inference:
+        condition: service_started   # garante que a imagem compartilhada já foi construída
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend/fleet-analytics
+      args:
+        NG_CONFIGURATION: production
+        API_BASE_URL: http://localhost:8080/api/v1
+    ports:
+      - "8081:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  demo_history:
