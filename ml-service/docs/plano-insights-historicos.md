@@ -153,6 +153,14 @@ Código em `src/ml_service/insights/demo/` e `desktop-simulator/.../tools/Histor
 | `evaluate.py` | replay dia a dia das regras e do planner e comparação com a verdade conhecida (D45) |
 | `load.py` | carga no banco **da demo**: cadastros pela API, viagens/métricas/alertas por `COPY`, depois o executor normal |
 
+**Demonstração pronta** (na raiz do repositório): `docker compose -f demo/compose.yaml up -d --build`. O serviço
+`ml-insights` desse compose roda `demo.seed` antes do motor contínuo: espera a API, gera o histórico no volume
+`demo_history` (se não existe ou terminou antes de ontem), carrega com `load.load`, calcula as métricas LIVE e os
+insights e grava a marca `public.demo_seed`, de modo que as próximas partidas não recarregam nada. A imagem
+(`demo/Containerfile`) é a do ml-service mais um JRE e as classes do simulador (`DEMO_SIMULATOR_CLASSPATH`).
+
+Passo a passo manual (avaliação, ou carga num banco já existente):
+
 ```bash
 # 1. gerar (≈ 3 min com 8 processos; data/demo/, ~100 MB)
 cd ml-service
@@ -161,16 +169,12 @@ cd ml-service
 # 2. avaliar (≈ 1 min; reports/insights/e14_demo_evaluation.json + tabela no terminal)
 .venv/bin/python -m ml_service.insights.demo.evaluate
 
-# 3. subir a plataforma da demo (na raiz do repositório) e carregar
-docker compose --profile demo up -d --build
-DEMO_DATABASE_URL=postgresql://<usuário>:<senha>@localhost:5433/<banco> ADMIN_PASSWORD=<senha do admin> \
-  .venv/bin/python -m ml_service.insights.demo.load --api http://localhost:8082/api/v1 [--reset]
+# 3. carregar num banco que só tenha a demo (API rodando sobre ele)
+DEMO_DATABASE_URL=postgresql://<usuário>:<senha>@localhost:5432/<banco> ADMIN_PASSWORD=<senha do admin> \
+  .venv/bin/python -m ml_service.insights.demo.load --api http://localhost:8080/api/v1 [--reset]
 ```
 
-- Frontend da demo: `http://localhost:8083` (API 8082). O serviço `ml-insights-demo` continua reavaliando os
-  insights a cada `INSIGHTS_INTERVAL_S`.
-- Para mostrar telemetria ao vivo na demo, o simulador pode apontar para ela:
-  `API_BASE_URL=http://localhost:8082 MQTT_BROKER_URL=tcp://localhost:1884` (veículos `DEMO-*`, motoristas `demo.*`,
-  senha `DEMO_DRIVER_PASSWORD`, padrão `demo-driver`).
+- Veículos `DEMO-*`, motoristas `demo.*` (senha `DEMO_DRIVER_PASSWORD`, padrão `demo-driver`); o simulador desktop
+  pode mandar telemetria ao vivo para a demo com a configuração padrão.
 - O histórico termina em `--end-date` (padrão: hoje). Para a apresentação, gere e carregue no próprio dia (ou na
   véspera) para os insights refletirem "os últimos 7/30 dias".

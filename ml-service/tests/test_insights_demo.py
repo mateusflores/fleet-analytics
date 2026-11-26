@@ -111,3 +111,29 @@ def test_replay_opens_and_keeps_the_planted_insights():
     # um episódio por chave enquanto a condição persiste (atualizado, não recriado)
     keys = [e.dedup_key for e in eps]
     assert len(keys) == len(set(keys))
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# primeira inicialização do compose da demo
+
+def test_seed_reuses_recent_history_and_regenerates_stale(tmp_path, monkeypatch):
+    import json
+
+    from ml_service.insights.demo import seed
+    calls = []
+
+    def fake_build(config, out, end, jobs):
+        calls.append(end)
+        m = {"start": "x", "end": end.isoformat(), "trips": 1, "events": 0}
+        (out / "manifest.json").write_text(json.dumps(m))
+        return m
+    monkeypatch.setattr(seed, "build", fake_build)
+    today = date(2026, 11, 25)
+
+    seed.ensure_history(tmp_path, today, 2)                                  # volume vazio: gera até ontem
+    assert calls == [today - timedelta(days=1)]                              # (hoje deixaria viagens no futuro)
+    seed.ensure_history(tmp_path, today + timedelta(days=1), 2)              # termina anteontem: reaproveita
+    assert len(calls) == 1
+    (tmp_path / "2025-11").mkdir()
+    seed.ensure_history(tmp_path, today + timedelta(days=5), 2)              # velho: limpa e gera de novo
+    assert calls[-1] == today + timedelta(days=4) and not (tmp_path / "2025-11").exists()

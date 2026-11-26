@@ -217,10 +217,11 @@ Sugestões:
 
 ## 7. Ambiente de demonstração (nada a fazer no frontend)
 
-Para a apresentação existe uma plataforma paralela com 12 meses de histórico e insights reais
-(`docker compose --profile demo up -d --build` na raiz). O compose da raiz constrói a mesma imagem do frontend com
-`API_BASE_URL=http://localhost:8082/api/v1` e a publica em `http://localhost:8083`; o `docker-compose.yml` do
-frontend não foi alterado. Login: o admin da instalação; motoristas `demo.d01`…`demo.d10`.
+Para a apresentação existe uma plataforma completa com 12 meses de histórico e insights reais
+(`docker compose -f demo/compose.yaml up -d --build` na raiz). Ela usa as portas padrão e constrói o frontend com a
+mesma configuração do `docker-compose.yml` dele (API em `http://localhost:8080/api/v1`, frontend em
+`http://localhost:8081`); nenhum arquivo do frontend foi alterado. Login `admin` / `admin`; motoristas
+`demo.d01`…`demo.d10`.
 
 ## 8. Respostas da API que mudaram (revisão de 2026-11-24)
 
